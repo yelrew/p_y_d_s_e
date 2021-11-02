@@ -713,8 +713,8 @@
 <span class="sd">        ----------</span>
 <span class="sd">        method : `str`, optional</span>
 <span class="sd">            Solution method, by default &#39;branch-current&#39;</span>
-<span class="sd">        checkerrors : `boolt`, optional</span>
-<span class="sd">            If `False`, ignore the gross error processing. By default &#39;True&#39;</span>
+<span class="sd">        checkerrors : `bool`, default True</span>
+<span class="sd">            If `False`, ignore the gross error processing.</span>
 <span class="sd">        report : bool, optional, default False</span>
 <span class="sd">            Print a main summary report</span>
 <span class="sd">        reportmeas : bool, default True</span>
@@ -723,6 +723,15 @@
 <span class="sd">            If ``report`` is enabled, print the voltage profile</span>
 <span class="sd">        reporti : bool, default True</span>
 <span class="sd">            If ``report`` is enabled, print the current profile</span>
+
+<span class="sd">        Note</span>
+<span class="sd">        ----</span>
+<span class="sd">        The error detection process is activated by default.</span>
+<span class="sd">        Note that noisy artificial measurements, as the ones generated</span>
+<span class="sd">        by :py:func:`pydse.dse.Dse.addMeas` can easily trigger the detection </span>
+<span class="sd">        threshold.</span>
+<span class="sd">        If this is not the intended behaviour, one should disable the error</span>
+<span class="sd">        check or increment ``r_thres``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>

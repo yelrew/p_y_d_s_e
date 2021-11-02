@@ -852,7 +852,7 @@ vector Z and H matrix.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>method</strong> (<cite>str</cite>, optional) – Solution method, by default ‘branch-current’</p></li>
-<li><p><strong>checkerrors</strong> (<cite>boolt</cite>, optional) – If <cite>False</cite>, ignore the gross error processing. By default ‘True’</p></li>
+<li><p><strong>checkerrors</strong> (<cite>bool</cite>, default True) – If <cite>False</cite>, ignore the gross error processing.</p></li>
 <li><p><strong>report</strong> (<em>bool, optional, default False</em>) – Print a main summary report</p></li>
 <li><p><strong>reportmeas</strong> (<em>bool, default True</em>) – If <code class="docutils literal notranslate"><span class="pre">report</span></code> is enabled, print the measurement set</p></li>
 <li><p><strong>reportv</strong> (<em>bool, default True</em>) – If <code class="docutils literal notranslate"><span class="pre">report</span></code> is enabled, print the voltage profile</p></li>
@@ -860,6 +860,15 @@ vector Z and H matrix.</p>
 </ul>
 </dd>
 </dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The error detection process is activated by default.
+Note that noisy artificial measurements, as the ones generated
+by <a class="reference internal" href="#pydse.dse.Dse.addMeas" title="pydse.dse.Dse.addMeas"><code class="xref py py-func docutils literal notranslate"><span class="pre">pydse.dse.Dse.addMeas()</span></code></a> can easily trigger the detection
+threshold.
+If this is not the intended behaviour, one should disable the error
+check or increment <code class="docutils literal notranslate"><span class="pre">r_thres</span></code>.</p>
+</div>
 </dd></dl>
 
 <dl class="py method">
