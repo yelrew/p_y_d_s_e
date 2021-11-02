@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pydse.dse &mdash; PyDSE 1.0.0-rc.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> PyDSE
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Pydse API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyDSE</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+          <li><a href="../pydse.html">pydse</a> &raquo;</li>
+      <li>pydse.dse</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pydse.dse</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;A class to Estimate the State of unbalanced Distribution Systems&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">pydse.powergrid</span> <span class="kn">import</span> <span class="n">Powergrid</span>
+<span class="kn">from</span> <span class="nn">pydse.loadflow</span> <span class="kn">import</span> <span class="n">Loadflow</span>
+<span class="kn">from</span> <span class="nn">pydse</span> <span class="kn">import</span> <span class="n">gridutils</span>
+<span class="kn">from</span> <span class="nn">pydse.meter</span> <span class="kn">import</span> <span class="n">Meter</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">sparse</span>
+
+
+<div class="viewcode-block" id="Dse"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse">[docs]</a><span class="k">class</span> <span class="nc">Dse</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A class to Estimate the State of unbalanced Distribution Systems</span>
+
+<span class="sd">    Currently, the Branch-current method is implemented, using a Sparse</span>
+<span class="sd">    solver from `scipy`. Artificial measurements can be generated from</span>
+<span class="sd">    the `zbus` load-flow method.</span>
+
+<span class="sd">    The observability check is performed by analyzing the transpose of</span>
+<span class="sd">    the Jacobian Matrix. If the system is not observable, a list of the</span>
+<span class="sd">    relevant branches that need additional measurements is provided.</span>
+
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    grid : `powergrid`</span>
+<span class="sd">       Power system represented in a Powergrid object.</span>
+<span class="sd">       If not provided, a grid object will be generated based on `filename`</span>
+<span class="sd">    filename : `string`, optional</span>
+<span class="sd">        Optional filename to instantiate the Powergrid object</span>
+<span class="sd">    loadflow : `Loadflow` </span>
+<span class="sd">        Holds a loadflow object, if measurement generation is requested.</span>
+<span class="sd">    meter : list [`Meter`]</span>
+<span class="sd">        Stores the measurements available in a `Meter` object</span>
+<span class="sd">    indexbr: `dict` [`str`, `dict`]</span>
+<span class="sd">        Associative array with index information for each branch km.</span>
+<span class="sd">        The key represents busk, and the values hold busm and the location</span>
+<span class="sd">        of the branch in the state vector `Ikm`.  See :py:func:`~pydse.dse.Dse.indexBranches` </span>
+<span class="sd">        for more details.</span>
+<span class="sd">    method: `str`, default &#39;branch-current&#39;</span>
+<span class="sd">        Solution method of the State Estimator.</span>
+
+<span class="sd">    nmt : `int`</span>
+<span class="sd">        Number of meters</span>
+<span class="sd">    nbr : `int`</span>
+<span class="sd">        Number of branches</span>
+<span class="sd">    N : `int`</span>
+<span class="sd">        Number of state variables</span>
+<span class="sd">    M : `int`</span>
+<span class="sd">        Number of measurements</span>
+
+<span class="sd">    Z : `numpy.array`, (M, )</span>
+<span class="sd">        Measurement (complex) vector</span>
+<span class="sd">    H : 2D `numpy.array`, (M, N)</span>
+<span class="sd">        Dense Jacobian Matrix        </span>
+<span class="sd">    Hs : `sparse.csc_matrix`, (M, N)</span>
+<span class="sd">        Sparse Jacobian Matrix (column-major)</span>
+<span class="sd">    Ws : `sparse.coo_matrix`, (M, M)</span>
+<span class="sd">        Sparse Weighting Matrix        </span>
+<span class="sd">    G : `sparse.csc_matrix`, (M, N)</span>
+<span class="sd">        Gain matrix</span>
+<span class="sd">    Gf : `sparse.csc_matrix`, (M, N)</span>
+<span class="sd">        Factorized gain matrix</span>
+<span class="sd">    r : `numpy.array`, (M, )</span>
+<span class="sd">        Residual (complex) vector</span>
+<span class="sd">    r_ : `numpy.array`, (M, )</span>
+<span class="sd">        Normalized residual (complex) vector        </span>
+<span class="sd">    r_thres : `float`, default 3.</span>
+<span class="sd">        Normalized residual test threshold    </span>
+<span class="sd">    grossmeas : `list` [`int`]</span>
+<span class="sd">        Index of the measurements flagged with gross errors.</span>
+<span class="sd">        See :py:func:`~pydse.dse.Dse.checkGrossErrors`</span>
+<span class="sd">    grossmeas_r_ : `list` [`float`]</span>
+<span class="sd">        Normalized residuals of the erroneous measurement.</span>
+<span class="sd">    Ikm : `numpy.array` , (M, )</span>
+<span class="sd">        Complex branch-current state vector (estimated currents)</span>
+<span class="sd">    E : `numpy.array` </span>
+<span class="sd">        Complex nodal voltages vector.</span>
+<span class="sd">    states : `list` [`str`]</span>
+<span class="sd">        String-list representation of the states   </span>
+<span class="sd">    Zstr : `list` [`str`]</span>
+<span class="sd">        String-list representingn the measurement vector</span>
+<span class="sd">    zmap : `list` [`np.ndarray`]</span>
+<span class="sd">        Stores the location (position in the meter list and the internal node) </span>
+<span class="sd">        of the measurement Z inside the meter structure.</span>
+<span class="sd">    isObservable : `bool` </span>
+<span class="sd">        Observability status of the system. True for an obsevable system.</span>
+<span class="sd">        See :py:func:`~pydse.dse.Dse.checkObservability`</span>
+<span class="sd">    hasGrossErrors : `bool` </span>
+<span class="sd">        True if there are gross errors present.</span>
+<span class="sd">        Initially, set to True. See :py:func:`~pydse.dse.Dse.checkGrossErrors`</span>
+<span class="sd">    nonobstates : `list` [`int`]</span>
+<span class="sd">        Index of the non-observable branches</span>
+<span class="sd">    tol : `float`, default 1e-8</span>
+<span class="sd">        Tolerance for the estimator convergence.</span>
+<span class="sd">    maxit : `int`, default 100</span>
+<span class="sd">        Maximum number of iterations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sbase</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span> <span class="n">maxit</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">filename</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>
+            <span class="n">grid</span> <span class="o">=</span> <span class="n">Powergrid</span><span class="o">.</span><span class="n">fromdss</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">sbase</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">grid</span> <span class="o">=</span> <span class="n">grid</span>
+
+        <span class="k">elif</span> <span class="n">grid</span> <span class="o">==</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">filename</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Dse class need a powergrid or filename&#39;</span><span class="p">)</span>
+            <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid</span> <span class="o">=</span> <span class="n">grid</span> <span class="c1"># powergrid object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span> <span class="c1"># optional filename for creating the grid from</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loadflow</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># load-flow object, for generating artificial measurements</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meter</span> <span class="o">=</span> <span class="n">Meter</span><span class="p">()</span> <span class="c1"># metering devices    </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">indexbr</span> <span class="o">=</span> <span class="p">{}</span> <span class="c1"># locations of the branches in the state vector</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Ikm</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># the estimated complex branch-currents</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nmt</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># number of meters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nbr</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># total number of phase branches</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Solution method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">N</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># number of state variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">M</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># number of total measurements</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Z</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Measurement vector</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">r</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Residual vector</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">r_</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Normalized residual vector</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">r_thres</span> <span class="o">=</span> <span class="mf">3.5</span> <span class="c1"># Normalized residual test threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">H</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Jacobian Matrix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Hs</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Sparse Jacobian Matrix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">G</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Sparse Gain Matrix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Gf</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Factorized Gain Matrix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Ws</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Sparse Weighting Matrix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">E</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># nodal voltages</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">states</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># string representation of the states</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Zstr</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># string list representation of the measurement vector</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zmap</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># mapping between Z and the corresponding meter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nonobstates</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Will hold the non-observable states</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tol</span> <span class="o">=</span> <span class="n">tol</span> <span class="c1"># Convergence tolerance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxit</span> <span class="o">=</span> <span class="n">maxit</span> <span class="c1"># Maximum number of iterations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">isObservable</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hasGrossErrors</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grossmeas</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># list of measurements with gross errors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grossmeas_r_</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># normalized residuals of the erroneous measurements</span>
+
+
+<div class="viewcode-block" id="Dse.addMeas"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse.addMeas">[docs]</a>    <span class="k">def</span> <span class="nf">addMeas</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;ikm&#39;</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">ignore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+                <span class="n">accuracy</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">grosserror</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add artificial measurements from load flow</span>
+
+<span class="sd">        The generated measurements can be of current or power `type` (flow or injection).</span>
+<span class="sd">        The noise level for each measurements is defined by the `accuracy` parameter,</span>
+<span class="sd">        which represents the reliability of the corresponding meter.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        type : {&#39;ikm&#39;,&#39;skm&#39;,&#39;i&#39;,&#39;q&#39;}, default &#39;ikm&#39;</span>
+<span class="sd">            Type of measurement to add.</span>
+<span class="sd">        nodes : {&#39;123&#39;, &#39;12&#39;}, default &#39;all&#39;</span>
+<span class="sd">            Nodes to which the measurement are connected to. It defaults to &#39;all&#39;, which</span>
+<span class="sd">            means all available nodes</span>
+<span class="sd">        location : {&#39;bus&#39;, &#39;bus1-bus2&#39;}, default &#39;all&#39;</span>
+<span class="sd">            Location to place the measurement. If bus, it should be the bus number or</span>
+<span class="sd">            a range of buses. If branch measurement, the terminal buses should be provided, </span>
+<span class="sd">            separated by a dash. The full branch id is also accepted.</span>
+<span class="sd">            Multiple locations are supported by separating the fields with comma.</span>
+<span class="sd">        ignore : {&#39;src&#39;, &#39;bus&#39;}, optional</span>
+<span class="sd">            Buses to be ignored when generating the measurements, by default None.</span>
+<span class="sd">        accuracy : float, default 0.</span>
+<span class="sd">            Measurement accuracy (0 to 1)</span>
+<span class="sd">        active : bool, default True</span>
+<span class="sd">            If true, the measurement is active</span>
+<span class="sd">        grosserror : `float`, default 0.</span>
+<span class="sd">            Gross error to be added to the measurement</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        Add pseudo- load power measurement to all buses except bus &#39;src&#39;, including all </span>
+<span class="sd">        nodes available on each bus.</span>
+
+<span class="sd">        &gt;&gt;&gt; from pydse.dse import Dse</span>
+<span class="sd">        &gt;&gt;&gt; dse = Dse(filename=&quot;&lt;.dss filename&gt;&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; dse.addMeas(&#39;s&#39;, location=&#39;all&#39;, nodes=&#39;src&#39;, ignore=&#39;src&#39;)</span>
+
+<span class="sd">        Add current injection measurments to buses 611, 684, 652, 671, 680, 692, 675, 670:</span>
+
+<span class="sd">        &gt;&gt;&gt; dse.addMeas(&#39;s&#39;, location=&#39;611, 684, 652, 671, 680, 692, 675, 670&#39;)</span>
+
+<span class="sd">        Add flow measurements to the transformer XFM1, Sub and branch 650-632:</span>
+
+<span class="sd">        &gt;&gt;&gt; dse.addMeas(&#39;Skm&#39;, location=&#39;XFM1, 650-632, Sub&#39;)</span>
+
+<span class="sd">        Add flow measurement to branch 645-646, nodes 2 and 3, with 10% accuracy:</span>
+<span class="sd">        </span>
+<span class="sd">        &gt;&gt;&gt; dse.addMeas(&#39;skm&#39;, location=&#39;645-646&#39;, nodes=&#39;23&#39;, accuracy=&#39;&#39;)</span>
+
+<span class="sd">        Add a pseudo- load in bus 611, with gross error 0.9 (90% times the expected accuracy)</span>
+
+<span class="sd">        &gt;&gt;&gt; dse.addMeas(&#39;s-pseudo&#39;, location=&#39;611&#39;, accuracy=0.2, grosserror= 0.9 )</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">loadflow</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loadflow</span> <span class="o">=</span> <span class="n">Loadflow</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="p">)</span> <span class="c1">#, loadmodel=&#39;1&#39;)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loadflow</span><span class="o">.</span><span class="n">loadflow</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;zbus&#39;</span><span class="p">)</span>
+            <span class="c1">#self.grid.calc_Il()</span>
+        
+        <span class="nb">type</span> <span class="o">=</span> <span class="nb">type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">grid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span>
+        
+        <span class="c1">#//////////////////////////////</span>
+        <span class="c1"># Bus measurements</span>
+
+        <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;s-pseudo&#39;</span>  <span class="ow">or</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;i&#39;</span><span class="p">:</span>
+
+            <span class="n">location</span> <span class="o">=</span> <span class="n">location</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="c1"># handles - and ,</span>
+            <span class="n">buslist</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># list of buses from which the measurements will be created</span>
+            <span class="k">for</span> <span class="n">loc</span> <span class="ow">in</span> <span class="n">location</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">loc</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
+                    <span class="n">buslist</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">busnodes</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                <span class="k">elif</span> <span class="n">loc</span> <span class="o">==</span> <span class="s1">&#39;load&#39;</span><span class="p">:</span>
+                    <span class="n">buslist</span> <span class="o">+=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="n">grid</span><span class="o">.</span><span class="n">load</span><span class="p">[</span><span class="n">load</span><span class="p">][</span><span class="s1">&#39;bus1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">load</span> <span class="ow">in</span> <span class="n">grid</span><span class="o">.</span><span class="n">load</span><span class="p">])))</span>
+                <span class="k">else</span><span class="p">:</span> <span class="c1"># TODO: add bus range handling</span>
+                    <span class="n">buslist</span> <span class="o">+=</span> <span class="p">[</span><span class="n">loc</span><span class="p">]</span>            
+            <span class="k">if</span> <span class="n">ignore</span><span class="p">:</span>
+                <span class="n">ignore</span> <span class="o">=</span> <span class="n">ignore</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+                <span class="n">ignorelist</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">igbus</span> <span class="ow">in</span> <span class="n">ignore</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">igbus</span> <span class="o">==</span> <span class="s1">&#39;src&#39;</span> <span class="ow">and</span> <span class="n">grid</span><span class="o">.</span><span class="n">sub_bus</span> <span class="ow">in</span> <span class="n">buslist</span><span class="p">:</span>
+                        <span class="n">ignorelist</span> <span class="o">+=</span> <span class="p">[</span><span class="n">grid</span><span class="o">.</span><span class="n">sub_bus</span><span class="p">]</span>
+                    <span class="k">elif</span> <span class="n">igbus</span> <span class="o">==</span> <span class="s1">&#39;prim&#39;</span><span class="p">:</span> <span class="c1"># ignore transformer&#39;s primary buses</span>
+                        <span class="n">ignorelist</span> <span class="o">+=</span> <span class="n">grid</span><span class="o">.</span><span class="n">trbus1</span>
+                    <span class="k">elif</span> <span class="n">igbus</span> <span class="o">==</span> <span class="s1">&#39;sec&#39;</span><span class="p">:</span> <span class="c1"># ignore transformer&#39;s primary buses</span>
+                        <span class="n">ignorelist</span> <span class="o">+=</span> <span class="n">grid</span><span class="o">.</span><span class="n">trbus2</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">ignorelist</span> <span class="o">+=</span> <span class="p">[</span><span class="n">igbus</span><span class="p">]</span>            
+                <span class="n">buslist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">buslist</span><span class="p">)</span><span class="o">-</span><span class="nb">set</span><span class="p">(</span><span class="n">ignorelist</span><span class="p">))</span>
+
+            <span class="c1"># Pseudo- load power measurement</span>
+            <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;s-pseudo&#39;</span><span class="p">:</span>
+                <span class="n">grid_meas</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">E</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">grid</span><span class="o">.</span><span class="n">Il</span> <span class="o">+</span> <span class="n">grid</span><span class="o">.</span><span class="n">Ic</span><span class="p">)</span> <span class="c1"># S will be kept fixed</span>
+
+            <span class="c1"># Current injection measurement (net bus flow)</span>
+            <span class="k">elif</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;i&#39;</span><span class="p">:</span>
+
+                <span class="n">grid_meas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">nnodes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">branch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">:</span>
+                    <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">branch</span><span class="p">][</span><span class="s1">&#39;bus1&#39;</span><span class="p">]</span>
+                    <span class="n">m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">branch</span><span class="p">][</span><span class="s1">&#39;bus2&#39;</span><span class="p">]</span>
+                    <span class="n">knodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">branch</span><span class="p">][</span><span class="s1">&#39;nodes1&#39;</span><span class="p">]</span>
+                    <span class="n">mnodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">branch</span><span class="p">][</span><span class="s1">&#39;nodes2&#39;</span><span class="p">]</span>
+                    <span class="n">iknodes</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">busnodes</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;nodes&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">knodes</span><span class="p">]</span>
+                    <span class="n">imnodes</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">busnodes</span><span class="p">[</span><span class="n">m</span><span class="p">][</span><span class="s1">&#39;nodes&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">mnodes</span><span class="p">]</span>
+                    <span class="n">ik</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">busnodes</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;inodes&#39;</span><span class="p">])[</span><span class="n">iknodes</span><span class="p">]</span>
+                    <span class="n">im</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">busnodes</span><span class="p">[</span><span class="n">m</span><span class="p">][</span><span class="s1">&#39;inodes&#39;</span><span class="p">])[</span><span class="n">imnodes</span><span class="p">]</span>
+                    <span class="n">ikm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">branch</span><span class="p">][</span><span class="s1">&#39;ikm&#39;</span><span class="p">]</span>
+                    <span class="n">grid_meas</span><span class="p">[</span><span class="n">im</span><span class="p">]</span> <span class="o">-=</span> <span class="n">ikm</span>
+                    <span class="n">grid_meas</span><span class="p">[</span><span class="n">ik</span><span class="p">]</span> <span class="o">+=</span> <span class="n">ikm</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;addMeas: Can&#39;&#39;t recognize measurement of type&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span>
+                <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                
+            <span class="k">for</span> <span class="n">bus</span> <span class="ow">in</span> <span class="n">buslist</span><span class="p">:</span>                 
+                <span class="n">si</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">busnodes</span><span class="p">[</span><span class="n">bus</span><span class="p">][</span><span class="s1">&#39;si&#39;</span><span class="p">]</span> <span class="c1"># starting index</span>
+                <span class="k">if</span> <span class="n">nodes</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
+                    <span class="n">nodes_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">busnodes</span><span class="p">[</span><span class="n">bus</span><span class="p">][</span><span class="s1">&#39;nodes&#39;</span><span class="p">]</span>
+                    <span class="n">nph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">busnodes</span><span class="p">[</span><span class="n">bus</span><span class="p">][</span><span class="s1">&#39;nphases&#39;</span><span class="p">]</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">grid_meas</span><span class="p">[</span><span class="n">si</span><span class="p">:</span><span class="n">si</span><span class="o">+</span><span class="n">nph</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">()</span><span class="o">*</span><span class="n">accuracy</span><span class="o">/</span><span class="mi">3</span> <span class="o">+</span> <span class="n">grosserror</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">nodes_</span> <span class="o">=</span> <span class="n">nodes</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nodes</span><span class="p">):</span>
+                        <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">busnodes</span><span class="p">[</span><span class="n">bus</span><span class="p">][</span><span class="n">n</span><span class="p">]</span>
+                        <span class="n">value</span><span class="p">[</span><span class="n">e</span><span class="p">]</span> <span class="o">=</span> <span class="n">grid_meas</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">()</span><span class="o">*</span><span class="n">accuracy</span><span class="o">/</span><span class="mi">3</span> <span class="o">+</span> <span class="n">grosserror</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">meter</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="n">nodes_</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="p">[</span><span class="n">bus</span><span class="p">],</span> 
+                                    <span class="n">accuracy</span><span class="o">=</span><span class="n">accuracy</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="n">active</span> <span class="p">)</span> 
+
+        <span class="c1">#//////////////////////////////</span>
+        <span class="c1"># Branch measurements</span>
+        
+        <span class="k">elif</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;skm&#39;</span> <span class="ow">or</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;ikm&#39;</span><span class="p">:</span>            
+            
+            <span class="n">location</span> <span class="o">=</span> <span class="n">location</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="c1"># handles - and ,</span>
+            <span class="n">branch_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">loc</span> <span class="ow">in</span> <span class="n">location</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">loc</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
+                    <span class="n">branch_list</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span>
+                <span class="k">elif</span> <span class="n">loc</span> <span class="o">==</span> <span class="s1">&#39;sec&#39;</span><span class="p">:</span> <span class="c1"># currents flowing out of the TRs secondary sides</span>
+                    <span class="k">for</span> <span class="n">id_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;bus2&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">trbus2</span><span class="p">:</span>
+                            <span class="n">branch_list</span> <span class="o">+=</span> <span class="p">[</span><span class="n">id_</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="n">loc</span> <span class="o">==</span> <span class="s1">&#39;prim&#39;</span><span class="p">:</span> <span class="c1"># currents flowing into the TRs primary side</span>
+                    <span class="k">for</span> <span class="n">id_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;bus1&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">trbus1</span><span class="p">:</span>
+                            <span class="n">branch_list</span> <span class="o">+=</span> <span class="p">[</span><span class="n">id_</span><span class="p">]</span>
+                    <span class="k">pass</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">loc</span> <span class="o">=</span> <span class="n">loc</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="c1"># handles - and ,</span>
+                    <span class="n">branch_list</span> <span class="o">+=</span> <span class="n">loc</span>        
+
+                <span class="k">if</span> <span class="n">ignore</span><span class="p">:</span>
+                    <span class="n">ignore_list</span> <span class="o">=</span> <span class="n">ignore</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+                    <span class="n">ignore</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">ig</span> <span class="ow">in</span> <span class="n">ignore_list</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="s1">&#39;-&#39;</span> <span class="ow">in</span> <span class="n">ig</span><span class="p">:</span> <span class="c1"># fetching branch id_ from terminal buses</span>
+                            <span class="n">k</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="n">ig</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+                            <span class="n">ignore</span> <span class="o">+=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">H</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">m</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;id_&#39;</span><span class="p">]]</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">ignore</span> <span class="o">+=</span> <span class="p">[</span><span class="n">ig</span><span class="p">]</span>
+
+                    <span class="n">branch_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">branch_list</span><span class="p">)</span><span class="o">-</span><span class="nb">set</span><span class="p">(</span><span class="n">ignore</span><span class="p">))</span>
+
+            <span class="k">for</span> <span class="n">branch</span> <span class="ow">in</span> <span class="n">branch_list</span><span class="p">:</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">branch</span><span class="p">][</span><span class="s1">&#39;bus1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">branch</span><span class="p">][</span><span class="s1">&#39;bus2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">grid_meas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">branch</span><span class="p">][</span><span class="nb">type</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">nodes</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
+                    <span class="n">nodes_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">branch</span><span class="p">][</span><span class="s1">&#39;nodes2&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">nodes_</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">branch</span><span class="p">][</span><span class="s1">&#39;nodes1&#39;</span><span class="p">]:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;addMeas: nodes1 and nodes2 are different (measurement&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="s1">&#39;)&#39;</span><span class="p">)</span>
+                        <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">grid_meas</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">()</span> <span class="o">*</span> <span class="n">accuracy</span><span class="o">/</span><span class="mi">3</span> <span class="o">+</span> <span class="n">grosserror</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">nodes_</span> <span class="o">=</span> <span class="n">nodes</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">v</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nodes</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">branch</span><span class="p">][</span><span class="s1">&#39;nodes2&#39;</span><span class="p">]:</span>
+                            <span class="n">nodes_</span> <span class="o">=</span> <span class="n">nodes_</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">nodes</span><span class="p">[</span><span class="n">v</span><span class="p">],</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+                            <span class="k">continue</span>
+                        <span class="n">j</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">branch</span><span class="p">][</span><span class="s1">&#39;nodes2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+                        <span class="n">value</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">grid_meas</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">()</span><span class="o">*</span><span class="n">accuracy</span><span class="o">/</span><span class="mi">3</span> <span class="o">+</span> <span class="n">grosserror</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes_</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">meter</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="n">nodes_</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="n">m</span><span class="p">],</span> 
+                                    <span class="n">accuracy</span><span class="o">=</span><span class="n">accuracy</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="n">active</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Dse.disableMeas"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse.disableMeas">[docs]</a>    <span class="k">def</span> <span class="nf">disableMeas</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zpos</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Disable a measurement</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        zpos : `tuple`</span>
+<span class="sd">            The absolute position in Z and the corresponding node </span>
+<span class="sd">            associated with the measurement.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmap</span><span class="p">[</span><span class="n">zpos</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meter</span><span class="o">.</span><span class="n">meter</span><span class="p">[</span><span class="n">m</span><span class="p">]</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meter</span><span class="o">.</span><span class="n">_nmi</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Dse.indexBranches"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse.indexBranches">[docs]</a>    <span class="k">def</span> <span class="nf">indexBranches</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Construct the index containing the branch order for BcDSE</span>
+
+<span class="sd">        The dict indexbr will store the ids of the from and to buses, and. For each</span>
+<span class="sd">        node, it will store the index of the corresponding position in the measurement </span>
+<span class="sd">        vector Z and H matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># branch counter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">states</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">sweepfromroot</span><span class="o">.</span><span class="n">edges</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexbr</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">indexbr</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">indexbr</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="c1"># Union of the phases of all wires connected between the buses k and m</span>
+            <span class="n">branch_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">H</span><span class="o">.</span><span class="n">get_edge_data</span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="n">m</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="n">nodes</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(([</span><span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;nodes2&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">branch_data</span><span class="p">]))</span>
+            <span class="n">id_</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;id_&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">branch_data</span><span class="p">]</span>
+            <span class="c1">#for node in self.grid.branches[id_][&#39;nodes2&#39;]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">indexbr</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">m</span><span class="p">][</span><span class="s1">&#39;nodes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nodes</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">indexbr</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">m</span><span class="p">][</span><span class="s1">&#39;indexes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="nb">range</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">b</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">))]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">indexbr</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">m</span><span class="p">][</span><span class="s1">&#39;ids&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">id_</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">indexbr</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">m</span><span class="p">][</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">b</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">states</span> <span class="o">+=</span> <span class="p">[</span> <span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;-&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;@&#39;</span> <span class="o">+</span> <span class="n">node</span> <span class="p">]</span>
+                <span class="n">b</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="c1">#self.indexbr[k][m][&#39;zkm&#39;] = zkm  # TODO: much safe to extract zkm from Y</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">nbr</span> <span class="o">=</span> <span class="n">b</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">N</span> <span class="o">=</span> <span class="n">b</span> <span class="c1"># defining here the number of state variables</span></div>
+
+
+<div class="viewcode-block" id="Dse.getTrueCurrents"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse.getTrueCurrents">[docs]</a>    <span class="k">def</span> <span class="nf">getTrueCurrents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the true branch current vector from the load flow results</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Ikm_true: ndarray</span>
+<span class="sd">            Array of the true branch currents evaluted from load flow</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Ikm_true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">nbrp</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">)</span>        
+
+        <span class="k">for</span> <span class="n">id_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">:</span> <span class="c1"># iterating over the index</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;bus1&#39;</span><span class="p">]</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;bus2&#39;</span><span class="p">]</span>
+            <span class="n">knodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;nodes1&#39;</span><span class="p">]</span>
+            <span class="n">mnodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;nodes2&#39;</span><span class="p">]</span>
+            <span class="n">ikm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;ikm&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">knodes</span> <span class="o">!=</span> <span class="n">mnodes</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;getTrueCurrents: knodes and mnodes in different order&#39;</span><span class="p">)</span>
+                <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">v</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mnodes</span><span class="p">):</span>
+                <span class="n">Ikm_true</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">indexbr</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">m</span><span class="p">][</span><span class="n">n</span><span class="p">]]</span> <span class="o">=</span> <span class="n">ikm</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="n">Ikm_true</span>                 </div>
+        
+
+<div class="viewcode-block" id="Dse.formZ"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse.formZ">[docs]</a>    <span class="k">def</span> <span class="nf">formZ</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Form the measurement vector (Z)</span>
+
+<span class="sd">        The vector Z contains only measurements of current type.</span>
+<span class="sd">        Power measurements are converted to pseudo-current measurements</span>
+<span class="sd">        using the voltages available.</span>
+
+<span class="sd">        Note</span>
+<span class="sd">        ----</span>
+<span class="sd">        Vector Z is build considered only ACTIVE measurements.</span>
+<span class="sd">        If a measurement is flagged as gross error after the estimation</span>
+<span class="sd">        process, it will be deactivated.</span>
+<span class="sd">        See :py:func:`~pydse.dse.Dse.checkGrossErrors` for more details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>         
+        <span class="bp">self</span><span class="o">.</span><span class="n">nmt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meter</span><span class="o">.</span><span class="n">nmt</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">)</span>        
+        <span class="bp">self</span><span class="o">.</span><span class="n">zmap</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">E</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grossmeas</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Zstr</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span> <span class="c1"># string list</span>
+
+        <span class="n">cm</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># individual meas. counter</span>
+        <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">meas</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meter</span><span class="o">.</span><span class="n">meter</span><span class="p">):</span>
+            <span class="n">bus</span> <span class="o">=</span> <span class="n">meas</span><span class="o">.</span><span class="n">location</span>
+            <span class="n">nodes</span> <span class="o">=</span> <span class="n">meas</span><span class="o">.</span><span class="n">nodes</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">meas</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">type_</span> <span class="o">=</span> <span class="n">meas</span><span class="o">.</span><span class="n">type</span>
+            <span class="n">loc</span> <span class="o">=</span> <span class="n">meas</span><span class="o">.</span><span class="n">location</span>
+            <span class="n">active</span> <span class="o">=</span> <span class="n">meas</span><span class="o">.</span><span class="n">active</span>
+
+            <span class="k">for</span> <span class="n">v</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nodes</span><span class="p">):</span> <span class="c1"># spliting measurements by nodes, here                </span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">active</span><span class="p">[</span><span class="n">v</span><span class="p">]:</span>
+                    <span class="k">continue</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">busnodes</span><span class="p">[</span><span class="n">bus</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">n</span><span class="p">]</span>
+                <span class="c1"># Converting pseudo- complex power to current, if needed</span>
+                <span class="k">if</span> <span class="n">type_</span> <span class="o">==</span> <span class="s1">&#39;s-pseudo&#39;</span><span class="p">:</span> 
+                        <span class="n">value</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">/</span> <span class="n">E</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="p">)</span>
+                <span class="k">elif</span> <span class="n">type_</span> <span class="o">==</span> <span class="s1">&#39;skm&#39;</span><span class="p">:</span>                    
+                    <span class="n">value</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">E</span><span class="p">[</span><span class="n">k</span><span class="p">]))</span> <span class="c1"># ikm = conj(skm / Ekm)</span>
+                <span class="k">elif</span> <span class="n">type_</span> <span class="o">==</span> <span class="s1">&#39;v&#39;</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;setZi: voltages measurements not accepted in the classical branch current SE&#39;</span><span class="p">)</span>
+                    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="c1"># Adding measurement to Z</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Z</span><span class="p">[</span><span class="n">cm</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">zmap</span><span class="p">[</span><span class="n">cm</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grossmeas</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">Zstr</span><span class="p">[</span><span class="n">cm</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">loc</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;@&#39;</span> <span class="o">+</span> <span class="n">n</span>                
+                <span class="n">cm</span> <span class="o">+=</span> <span class="mi">1</span>        </div>
+
+
+<div class="viewcode-block" id="Dse.formH"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse.formH">[docs]</a>    <span class="k">def</span> <span class="nf">formH</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Form the Jacobian Matrix (H) for State Estimation</span>
+<span class="sd">        &quot;&quot;&quot;</span>                
+        <span class="bp">self</span><span class="o">.</span><span class="n">H</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">))</span> <span class="c1"># TODO: change to sparse matrix</span>
+        <span class="n">hrow</span><span class="p">,</span> <span class="n">hcol</span><span class="p">,</span> <span class="n">hdata</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span> <span class="c1"># row, column and value of sparse matrix</span>
+        <span class="n">cm</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">meas</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">meter</span><span class="o">.</span><span class="n">meter</span><span class="p">:</span>
+            <span class="nb">type</span> <span class="o">=</span> <span class="n">meas</span><span class="o">.</span><span class="n">type</span>
+            <span class="n">nodes</span> <span class="o">=</span> <span class="n">meas</span><span class="o">.</span><span class="n">nodes</span>
+            <span class="n">active</span> <span class="o">=</span> <span class="n">meas</span><span class="o">.</span><span class="n">active</span>
+
+            <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;ikm&#39;</span> <span class="ow">or</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;skm&#39;</span><span class="p">:</span>
+                <span class="n">k</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="n">meas</span><span class="o">.</span><span class="n">location</span>
+                <span class="k">for</span> <span class="n">n_</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nodes</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">active</span><span class="p">[</span><span class="n">n_</span><span class="p">]:</span>
+                        <span class="k">continue</span>
+                    <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexbr</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">m</span><span class="p">][</span><span class="n">node</span><span class="p">]</span> <span class="c1"># index in vector Z</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">H</span><span class="p">[</span><span class="n">cm</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+                    <span class="n">hrow</span> <span class="o">+=</span> <span class="p">[</span><span class="n">cm</span><span class="p">];</span> <span class="n">hcol</span> <span class="o">+=</span> <span class="p">[</span><span class="n">n</span><span class="p">];</span> <span class="n">hdata</span> <span class="o">+=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> 
+                    <span class="n">cm</span> <span class="o">+=</span><span class="mi">1</span>
+
+            <span class="k">elif</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;s-pseudo&#39;</span> <span class="ow">or</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;i&#39;</span><span class="p">:</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="n">meas</span><span class="o">.</span><span class="n">location</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">predecessors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">sweepfromroot</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">k</span><span class="p">))</span> <span class="c1"># back to the substation</span>
+                <span class="n">successors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">sweepfromroot</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">k</span><span class="p">))</span> <span class="c1"># after th</span>
+
+                <span class="k">for</span> <span class="n">n_</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nodes</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">active</span><span class="p">[</span><span class="n">n_</span><span class="p">]:</span>
+                        <span class="k">continue</span>
+                    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">successors</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">node</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexbr</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">m</span><span class="p">]:</span>
+                            <span class="k">continue</span> <span class="c1"># node doesn&#39;t exist in current branch</span>
+                        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexbr</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">m</span><span class="p">][</span><span class="n">node</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;s-pseudo&#39;</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">H</span><span class="p">[</span><span class="n">cm</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.</span>
+                            <span class="n">hdata</span> <span class="o">+=</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">H</span><span class="p">[</span><span class="n">cm</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+                            <span class="n">hdata</span> <span class="o">+=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+                        <span class="n">hrow</span> <span class="o">+=</span> <span class="p">[</span><span class="n">cm</span><span class="p">];</span> <span class="n">hcol</span> <span class="o">+=</span> <span class="p">[</span><span class="n">n</span><span class="p">]</span> 
+
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">predecessors</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">node</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexbr</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">k</span><span class="p">]:</span>
+                            <span class="k">continue</span> <span class="c1"># node doesn&#39;t exist in current branch</span>
+                        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexbr</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">k</span><span class="p">][</span><span class="n">node</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;s-pseudo&#39;</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">H</span><span class="p">[</span><span class="n">cm</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span> <span class="o">=</span>  <span class="mf">1.</span>
+                            <span class="n">hdata</span> <span class="o">+=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">H</span><span class="p">[</span><span class="n">cm</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.</span>
+                            <span class="n">hdata</span> <span class="o">+=</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+                        <span class="n">hrow</span> <span class="o">+=</span> <span class="p">[</span><span class="n">cm</span><span class="p">];</span> <span class="n">hcol</span> <span class="o">+=</span> <span class="p">[</span><span class="n">n</span><span class="p">]</span>
+
+                    <span class="n">cm</span> <span class="o">+=</span> <span class="mi">1</span>     
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">Hs</span> <span class="o">=</span> <span class="n">sparse</span><span class="o">.</span><span class="n">coo_matrix</span><span class="p">((</span><span class="n">hdata</span><span class="p">,</span> <span class="p">(</span><span class="n">hrow</span><span class="p">,</span> <span class="n">hcol</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">)</span><span class="o">.</span><span class="n">tocsc</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Dse.formW"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse.formW">[docs]</a>    <span class="k">def</span> <span class="nf">formW</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Construct the Weighting Matrix (W)</span>
+
+<span class="sd">        The weight of each measurement is computed as the reciprocal of the</span>
+<span class="sd">        correponding variance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">Wd</span><span class="p">,</span> <span class="n">Wdata</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span> <span class="c1"># diagonal and data</span>
+
+        <span class="n">cm</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">meas</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">meter</span><span class="o">.</span><span class="n">meter</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">meas</span><span class="o">.</span><span class="n">accuracy</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-20</span><span class="p">:</span>
+                <span class="n">std</span> <span class="o">=</span> <span class="mf">0.00001</span> <span class="o">/</span> <span class="mi">3</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">std</span> <span class="o">=</span> <span class="n">meas</span><span class="o">.</span><span class="n">accuracy</span> <span class="o">/</span> <span class="mi">3</span>
+
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">meas</span><span class="o">.</span><span class="n">nodes</span><span class="p">)):</span> <span class="c1"># spliting measurements by nodes, here</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">meas</span><span class="o">.</span><span class="n">active</span><span class="p">[</span><span class="n">v</span><span class="p">]:</span>
+                    <span class="k">continue</span>
+                <span class="n">Wd</span> <span class="o">+=</span> <span class="p">[</span><span class="n">cm</span><span class="p">]</span>
+                <span class="n">Wdata</span> <span class="o">+=</span> <span class="p">[</span><span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="n">std</span><span class="o">**</span><span class="mi">2</span><span class="p">)]</span>
+                <span class="n">cm</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">Ws</span> <span class="o">=</span> <span class="n">sparse</span><span class="o">.</span><span class="n">coo_matrix</span><span class="p">((</span><span class="n">Wdata</span><span class="p">,</span> <span class="p">(</span><span class="n">Wd</span><span class="p">,</span> <span class="n">Wd</span><span class="p">)))</span></div>
+
+
+
+<div class="viewcode-block" id="Dse.updateVoltages"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse.updateVoltages">[docs]</a>    <span class="k">def</span> <span class="nf">updateVoltages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the nodal Voltages using the available branch-currents</span>
+
+<span class="sd">        This is the step 2 of the BrcDSE algorithm. It performes a forward</span>
+<span class="sd">        sweep starting from the substation, updating all nodal voltages</span>
+<span class="sd">        using Kirchhoff&#39;s Voltage Law.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">E</span>
+
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">sweepfromroot</span><span class="o">.</span><span class="n">edges</span><span class="p">:</span>
+            <span class="n">indexes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexbr</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">m</span><span class="p">][</span><span class="s1">&#39;indexes&#39;</span><span class="p">]</span>
+            <span class="n">ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexbr</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">m</span><span class="p">][</span><span class="s1">&#39;ids&#39;</span><span class="p">]</span>
+            
+            <span class="k">for</span> <span class="n">id_</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">:</span> <span class="c1"># handling parallel branches</span>
+                <span class="c1">#type = self.grid.branches[id_][&#39;type&#39;]</span>
+                <span class="n">nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;nodes2&#39;</span><span class="p">]</span>
+                <span class="n">indexes</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">indexbr</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">m</span><span class="p">][</span><span class="n">n</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">]</span>
+                <span class="n">iknodes</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">busnodes</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;nodes&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">]</span>
+                <span class="n">ik</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">busnodes</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;inodes&#39;</span><span class="p">])[</span><span class="n">iknodes</span><span class="p">]</span>
+                <span class="n">imnodes</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">busnodes</span><span class="p">[</span><span class="n">m</span><span class="p">][</span><span class="s1">&#39;nodes&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">]</span>
+                <span class="n">im</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">busnodes</span><span class="p">[</span><span class="n">m</span><span class="p">][</span><span class="s1">&#39;inodes&#39;</span><span class="p">])[</span><span class="n">imnodes</span><span class="p">]</span>
+                <span class="n">zkm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;zkm&#39;</span><span class="p">]</span>
+                <span class="n">akm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;akm&#39;</span><span class="p">]</span>
+                <span class="n">At</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;At&#39;</span><span class="p">]</span>
+                <span class="n">ikm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Ikm</span><span class="p">[</span><span class="n">indexes</span><span class="p">]</span>
+                <span class="c1"># Updating terminal voltage</span>
+                <span class="n">E</span><span class="p">[</span><span class="n">im</span><span class="p">]</span> <span class="o">=</span> <span class="n">At</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">E</span><span class="p">[</span><span class="n">ik</span><span class="p">])</span> <span class="o">-</span> <span class="n">zkm</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">ikm</span><span class="p">)</span><span class="o">*</span><span class="n">akm</span><span class="o">**</span><span class="mi">2</span> <span class="c1"># KVL</span></div>
+
+
+<div class="viewcode-block" id="Dse.checkObservability"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse.checkObservability">[docs]</a>    <span class="k">def</span> <span class="nf">checkObservability</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks the network observability by analyzing matrix Ht</span>
+
+<span class="sd">        The method is based on the factorization of the transpose of the </span>
+<span class="sd">        Jacobian Matrix (H.T). If any row of the factorized matrix has all</span>
+<span class="sd">        elements zero, it indicates the corresponding state is non-observable.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">scipy.linalg</span> <span class="kn">import</span> <span class="n">lu_factor</span>
+        <span class="kn">from</span> <span class="nn">scipy.linalg</span> <span class="kn">import</span> <span class="n">lu</span>
+
+        <span class="n">ht</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">H</span><span class="o">.</span><span class="n">T</span> <span class="c1"># TODO: Change to Sparse matrix</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">M</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">:</span>
+            <span class="n">ht</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">ht</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">ht</span><span class="p">[:,</span><span class="o">-</span><span class="mi">1</span><span class="p">],(</span><span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">ht</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="n">j</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mf">1e-20</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">):</span>                
+                <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">ht</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mf">1e-20</span><span class="p">:</span>
+                    <span class="n">cij</span> <span class="o">=</span> <span class="o">-</span><span class="n">ht</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span><span class="o">/</span><span class="n">ht</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="n">j</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">):</span>
+                        <span class="n">ht</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="n">ht</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="p">]</span><span class="o">*</span><span class="n">cij</span>
+
+        <span class="n">sumrows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">):</span>
+                <span class="n">sumrows</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">ht</span><span class="p">[</span><span class="n">n</span><span class="p">,</span><span class="n">m</span><span class="p">])</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">nonobstates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sumrows</span><span class="o">==</span><span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nonobstates</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">isObservable</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">isObservable</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="Dse.checkGrossErrors"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse.checkGrossErrors">[docs]</a>    <span class="k">def</span> <span class="nf">checkGrossErrors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Detect and remove gross errors</span>
+
+<span class="sd">        Detect and remove gross errors through the maximum normalized</span>
+<span class="sd">        residual test. The detection threshold is defined by</span>
+<span class="sd">        ``r_thres``. The measurements flagged by gross errors are</span>
+<span class="sd">        deactivated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;branch-current&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Z</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">Hs</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Ikm</span><span class="p">)</span> <span class="c1"># measurement residuals</span>
+
+        <span class="n">R_ii</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">Ws</span><span class="o">.</span><span class="n">data</span> <span class="c1"># Diagonal elements of R</span>
+        <span class="n">S_ii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">)</span> <span class="c1"># Sensitivity matrix</span>
+
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">):</span>
+            <span class="n">htj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Hs</span><span class="p">[</span><span class="n">m</span><span class="p">,:]</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span>
+            <span class="n">S_ii</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">htj</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Gf</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">htj</span><span class="p">))</span><span class="o">/</span><span class="n">R_ii</span><span class="p">[</span><span class="n">m</span><span class="p">])[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">Omega_ii</span> <span class="o">=</span> <span class="n">S_ii</span> <span class="o">/</span> <span class="n">R_ii</span> <span class="c1"># computing only diagonal elements        </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">r_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">r</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">Omega_ii</span><span class="p">)</span>
+
+        <span class="n">maxr_</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r_</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">maxr_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r_</span><span class="p">))</span>        
+
+        <span class="k">if</span> <span class="n">maxr_</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_thres</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hasGrossErrors</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">grossmeas</span> <span class="o">+=</span> <span class="p">[</span><span class="n">maxr_pos</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">grossmeas_r_</span> <span class="o">+=</span> <span class="p">[</span><span class="n">maxr_</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">disableMeas</span><span class="p">(</span><span class="n">maxr_pos</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hasGrossErrors</span> <span class="o">=</span> <span class="kc">False</span></div>
+        
+
+<div class="viewcode-block" id="Dse.runDSE"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse.runDSE">[docs]</a>    <span class="k">def</span> <span class="nf">runDSE</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;branch-current&#39;</span><span class="p">,</span> <span class="n">checkerrors</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+               <span class="n">report</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">reportmeas</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">reportv</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">reporti</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wrapper class for performing a Distributed State Estimator</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        method : `str`, optional</span>
+<span class="sd">            Solution method, by default &#39;branch-current&#39;</span>
+<span class="sd">        checkerrors : `boolt`, optional</span>
+<span class="sd">            If `False`, ignore the gross error processing. By default &#39;True&#39;</span>
+<span class="sd">        report : bool, optional, default False</span>
+<span class="sd">            Print a main summary report</span>
+<span class="sd">        reportmeas : bool, default True</span>
+<span class="sd">            If ``report`` is enabled, print the measurement set</span>
+<span class="sd">        reportv : bool, default True</span>
+<span class="sd">            If ``report`` is enabled, print the voltage profile</span>
+<span class="sd">        reporti : bool, default True</span>
+<span class="sd">            If ``report`` is enabled, print the current profile</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">indexBranches</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hasGrossErrors</span> <span class="o">=</span> <span class="kc">True</span> <span class="c1"># force re-check</span>
+        <span class="n">E_true</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">E</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">Ikm_true</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getTrueCurrents</span><span class="p">()</span>
+
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">hasGrossErrors</span><span class="p">:</span>
+            <span class="n">status</span><span class="p">,</span> <span class="n">it</span><span class="p">,</span> <span class="n">maxabserr</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;branch-current&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">BranchCurrent</span><span class="p">,</span>            
+            <span class="p">}[</span><span class="n">method</span><span class="p">]()</span>
+            <span class="k">if</span> <span class="n">checkerrors</span> <span class="ow">and</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">checkGrossErrors</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">hasGrossErrors</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="n">report</span><span class="p">:</span>
+            <span class="n">gridutils</span><span class="o">.</span><span class="n">summary_dse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="n">it</span><span class="p">,</span> <span class="n">maxabserr</span><span class="p">,</span> 
+                                  <span class="n">Ikm_true</span><span class="p">,</span> <span class="n">E_true</span><span class="p">,</span> <span class="n">reportmeas</span><span class="o">=</span><span class="n">reportmeas</span><span class="p">,</span> 
+                                  <span class="n">reportv</span><span class="o">=</span><span class="n">reportv</span><span class="p">,</span> <span class="n">reporti</span><span class="o">=</span><span class="n">reporti</span><span class="p">)</span></div>
+            
+
+<div class="viewcode-block" id="Dse.BranchCurrent"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse.BranchCurrent">[docs]</a>    <span class="k">def</span> <span class="nf">BranchCurrent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> 
+        <span class="sd">&quot;&quot;&quot; Branch-current based DSE</span>
+<span class="sd">        </span>
+<span class="sd">        The Branch-current based DSE (BcDSE) algorithm [1] estimates the complex </span>
+<span class="sd">        currents at each branch of a power grid by using a set of redundant power </span>
+<span class="sd">        flow or injection measurements.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        report : `bool`, default False</span>
+<span class="sd">            Print a small report after the estimation process</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        status : `bool`</span>
+<span class="sd">            Observable status (True for observable, False otherwise)        </span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------    </span>
+<span class="sd">        [1] https://ieeexplore.ieee.org/document/373974</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">M</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meter</span><span class="o">.</span><span class="n">nma</span><span class="p">()</span> <span class="c1"># number of active measurements</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">formH</span><span class="p">()</span> <span class="c1"># one time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkObservability</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">isObservable</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">1e20</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">formW</span><span class="p">()</span>               
+        
+        <span class="n">G</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Hs</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Ws</span><span class="p">)</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Hs</span><span class="p">)</span><span class="o">.</span><span class="n">tocsc</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Gf</span> <span class="o">=</span> <span class="n">sparse</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">splu</span><span class="p">(</span><span class="n">G</span><span class="p">)</span> <span class="c1"># factorized G (COLAMD - minimum degree order)</span>
+
+        <span class="n">Ikm0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbr</span><span class="p">)</span> <span class="c1"># Estimate of iteration i-1</span>
+        <span class="n">it</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="mi">1</span> <span class="c1"># convergence status (0 to convergence)</span>
+        <span class="n">maxabserr</span> <span class="o">=</span> <span class="mf">1e10</span> <span class="c1"># maximum absolute error between successive estimates</span>
+        
+        <span class="k">while</span> <span class="n">it</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxit</span><span class="p">:</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">formZ</span><span class="p">()</span>
+            <span class="c1">#self.Ikm = sparse.linalg.dsolve.spsolve(Gs, self.Hs.T.dot(self.Z))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Ikm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Gf</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Hs</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Ws</span><span class="p">)</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Z</span><span class="p">))</span>
+            <span class="c1">#self.Ikm = np.linalg.lstsq(G, self.H.T.dot(self.Z),rcond=None)[0]</span>
+            <span class="n">maxabserr</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">Ikm0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">Ikm</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">maxabserr</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tol</span><span class="p">:</span>
+                <span class="n">status</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">break</span>                                
+            <span class="bp">self</span><span class="o">.</span><span class="n">updateVoltages</span><span class="p">()</span>
+            <span class="n">Ikm0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Ikm</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">it</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">status</span><span class="p">,</span> <span class="n">it</span><span class="p">,</span> <span class="n">maxabserr</span><span class="p">)</span></div></div>
+
+
+<span class="c1"># if __name__ == &#39;__main__&#39;:</span>
+
+<span class="c1">#     import sys</span>
+<span class="c1">#     import os</span>
+<span class="c1">#     sys.path.insert(0, os.path.dirname(__file__) + &#39;/examples&#39;)</span>
+<span class="c1">#     import rundse13gross</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Eduardo Werley.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

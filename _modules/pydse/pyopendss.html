@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pydse.pyopendss &mdash; PyDSE 1.0.0-beta.2 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> PyDSE
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">PyDSE api</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyDSE</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+          <li><a href="../pydse.html">pydse</a> &raquo;</li>
+      <li>pydse.pyopendss</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pydse.pyopendss</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;An interface class to read OpenDSS data files&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<div class="viewcode-block" id="Dss"><a class="viewcode-back" href="../../pydse.html#pydse.pyopendss.Dss">[docs]</a><span class="k">class</span> <span class="nc">Dss</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;An interface class to read OpenDSS data files</span>
+
+<span class="sd">    The .dss file format is essentially a text-based command language script</span>
+<span class="sd">    which has models for several types of power delivery, conversion and source</span>
+<span class="sd">    elements.</span>
+
+<span class="sd">    The `new` command is the basic .dss command PyDSE interprets, determining</span>
+<span class="sd">    the type and properties of the elements to be added.</span>
+<span class="sd">    For a full reference of the OpenDSS command language syntax, please refer to</span>
+<span class="sd">    [1].</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Currently, the specific implementation of the .dss codes in PyDSE is as follows:</span>
+
+<span class="sd">    ================ =========================================================================</span>
+<span class="sd">    ``Circuit``      Implements a multi-phase voltage source. PyDSE defines the substation \n </span>
+<span class="sd">                     voltage and angle from the basekv and angle tags. \n</span>
+
+<span class="sd">    ``Line``         Models a multi-phase lines or cables, as a :math:`pi` model with series\n  </span>
+<span class="sd">                     and shunt capacitance. The parameters can be provided as symmetrical \n</span>
+<span class="sd">                     components or impedance matrices (most usual), by assigning it to a \n</span>
+<span class="sd">                     ``Linecode`` object.</span>
+
+<span class="sd">    ``Linecode``     Stores the impedance characteristics for lines and cables. </span>
+
+<span class="sd">    ``Transformer``  Implements a three or single phase-transformer. connected either as \n</span>
+<span class="sd">                     as &#39;wye&#39; or &#39;delta&#39;.</span>
+
+<span class="sd">    ``Regcontrol``   in PyDSE, a voltage regulator is considered as a transformer with \n</span>
+<span class="sd">                     fixed ratio.</span>
+
+<span class="sd">    ``Capacitor``    Multi-phase shunt (grounded) capacitor.</span>
+
+<span class="sd">    ``Load``         Multi-phase &#39;wye&#39; or &#39;delta&#39; connected load. PyDSE implements most \n</span>
+<span class="sd">                     of the .dss load modes, such as constant power (type 1), constant \n</span>
+<span class="sd">                     impedance (type 2) and constant current (type 5).</span>
+<span class="sd">    ================ =========================================================================</span>
+
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    Powergrid</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ..[1] https://www.epri.com/pages/sa/opendss</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">filepath</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span> <span class="c1"># can declare variables through self inside any method !&#39;&#39;</span>
+        
+        <span class="c1"># Dictionaries to store power grid elements        </span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">circuit</span> <span class="o">=</span> <span class="p">{}</span>       
+        <span class="bp">self</span><span class="o">.</span><span class="n">line</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">regcontrol</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">capacitor</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">linecode</span> <span class="o">=</span> <span class="p">{}</span>                
+
+<div class="viewcode-block" id="Dss.read"><a class="viewcode-back" href="../../pydse.html#pydse.pyopendss.Dss.read">[docs]</a>    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepath</span><span class="p">,</span> <span class="n">redirect</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reads an OpenDSS file (.dss) to a set dicionaries related to power elements</span>
+
+<span class="sd">        The `read` method reads an OpenDSS file, parse and store its contents in</span>
+<span class="sd">        dictionaries of `circuit`, `line`, `transformer`, `regcontrol`, `load`,</span>
+<span class="sd">        `capacitor` and `linecode`. Currently, the function accepts the OpenDSS </span>
+<span class="sd">        commands `new` and `Redirect`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filepath : `str`</span>
+<span class="sd">            OpenDSS filepath to read</span>
+<span class="sd">        redirect : bool, optional</span>
+<span class="sd">            Recursive flag for the `redirect` code, by default False</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        Create a Dss object from the file &#39;IEEE13.dss&#39; and print the linecodes read.</span>
+
+<span class="sd">        &gt;&gt;&gt; import pyopendss</span>
+<span class="sd">        &gt;&gt;&gt; dss = pyopendss.Dss(filepath=&#39;IEEE13.dss)</span>
+<span class="sd">        &gt;&gt;&gt; print(dss.linecode&#39;)               </span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">filepath</span> <span class="o">=</span> <span class="n">filepath</span> <span class="c1"># one can declare variables using self from any method !       </span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">contents</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>             
+            <span class="n">contents</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;/\*(.|[</span><span class="se">\r\n</span><span class="s2">])*?\*/&quot;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">contents</span><span class="p">)</span> <span class="c1"># removing multi-line comments            </span>
+            <span class="n">contents</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;(!|//).*&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">contents</span><span class="p">)</span> <span class="c1"># removing single-line comments</span>
+            <span class="c1">#contents = re.sub(&quot;\n~&quot;, &quot;&quot;, contents) # handling multi-line commands</span>
+            <span class="n">contents</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">\s*</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">contents</span><span class="p">)</span> <span class="c1"># removing blank lines</span>
+            <span class="n">contents</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;^</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">contents</span><span class="p">)</span> <span class="c1"># removing empty line</span>
+            <span class="n">contents</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;  +&#39;</span><span class="p">,</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">contents</span><span class="p">)</span> <span class="c1"># removing repetitive spaces</span>
+            <span class="n">contents</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">~&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">contents</span><span class="p">)</span> <span class="c1"># handling multi-line commands</span>
+            <span class="n">contents</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;\s*=\s*&#39;</span><span class="p">,</span><span class="s1">&#39;=&#39;</span><span class="p">,</span><span class="n">contents</span><span class="p">)</span> <span class="c1"># removing spaces around =</span>
+            <span class="n">contents</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot; ([a-zA-Z0-9%]*)=&quot;</span><span class="p">,</span><span class="sa">r</span><span class="s2">&quot;, \1=&quot;</span><span class="p">,</span><span class="n">contents</span><span class="p">)</span> <span class="c1"># adding commas before property names            </span>
+            <span class="n">contents</span> <span class="o">=</span> <span class="n">contents</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span> <span class="c1"># creating string array</span>
+
+            <span class="c1"># TODO: Handle multi-line comments</span>
+
+            <span class="c1">#*************************</span>
+
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">contents</span><span class="p">:</span>
+
+                <span class="c1"># **************************</span>
+                <span class="c1"># Parsing &#39;New&#39; command</span>
+               
+                <span class="k">if</span> <span class="s1">&#39;new&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+
+                    <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">4</span><span class="p">:]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;object=&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="c1"># Stripping &#39;New &#39; and (possible) &#39;object=&#39; string</span>
+                    <span class="n">sep</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+                    <span class="n">parameters</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="n">sep</span><span class="p">]</span>
+                    <span class="n">Classname</span><span class="p">,</span> <span class="n">objname</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+                    <span class="n">Classname</span> <span class="o">=</span> <span class="n">Classname</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="c1"># making Classname lowercase !!</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="n">sep</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                    
+                    <span class="c1"># TODO: Test if &#39;=&#39; is absent from properties. In this case, the properties </span>
+                    <span class="c1"># need to be defined using positional parameters!</span>
+
+                    <span class="k">if</span> <span class="n">Classname</span> <span class="o">!=</span> <span class="s1">&#39;transformer&#39;</span><span class="p">:</span>
+                        <span class="n">properties</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span> <span class="n">properties</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">properties</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span> <span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># Separating identical transformer tags</span>
+                        <span class="n">properties</span> <span class="o">=</span> <span class="p">{}</span>
+                        <span class="n">tags</span> <span class="o">=</span> <span class="p">[</span> <span class="n">properties</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">properties</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span> <span class="p">]</span>
+                        <span class="k">for</span> <span class="n">tag</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
+                            <span class="n">c</span> <span class="o">=</span> <span class="mi">1</span> <span class="c1"># counter</span>
+                            <span class="n">tag_</span> <span class="o">=</span> <span class="n">tag</span>
+                            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>                                
+                                <span class="k">if</span> <span class="n">tag</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+                                    <span class="n">properties</span><span class="p">[</span><span class="n">tag</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                                    <span class="k">break</span>
+                                <span class="n">tag</span> <span class="o">=</span> <span class="n">tag_</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>                   
+
+                    <span class="n">properties</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">k</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">properties</span><span class="o">.</span><span class="n">items</span><span class="p">())</span> <span class="c1"># converting keys to lowercase</span>
+
+                    <span class="c1">#TODO: Currently, the keywork &quot;Object=&quot; before the Class name is not handled ! </span>
+                    
+                    <span class="k">if</span> <span class="n">Classname</span> <span class="o">==</span> <span class="s1">&#39;circuit&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">circuit</span><span class="p">[</span><span class="n">objname</span><span class="p">]</span> <span class="o">=</span> <span class="n">properties</span> <span class="c1"># Load</span>
+                    <span class="k">elif</span> <span class="n">Classname</span> <span class="o">==</span> <span class="s1">&#39;line&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">line</span><span class="p">[</span><span class="n">objname</span><span class="p">]</span> <span class="o">=</span> <span class="n">properties</span>
+                    <span class="k">elif</span> <span class="n">Classname</span> <span class="o">==</span> <span class="s1">&#39;linecode&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">linecode</span><span class="p">[</span><span class="n">objname</span><span class="p">]</span> <span class="o">=</span> <span class="n">properties</span> <span class="c1"># Linecode</span>
+                    <span class="k">elif</span> <span class="n">Classname</span> <span class="o">==</span> <span class="s1">&#39;transformer&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="p">[</span><span class="n">objname</span><span class="p">]</span> <span class="o">=</span> <span class="n">properties</span>                        
+                    <span class="k">elif</span> <span class="n">Classname</span> <span class="o">==</span> <span class="s1">&#39;regcontrol&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">regcontrol</span><span class="p">[</span><span class="n">objname</span><span class="p">]</span> <span class="o">=</span> <span class="n">properties</span>                        
+                    <span class="k">elif</span> <span class="n">Classname</span> <span class="o">==</span> <span class="s1">&#39;load&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">[</span><span class="n">objname</span><span class="p">]</span> <span class="o">=</span> <span class="n">properties</span> <span class="c1"># Load</span>
+                    <span class="k">elif</span> <span class="n">Classname</span> <span class="o">==</span> <span class="s1">&#39;capacitor&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacitor</span><span class="p">[</span><span class="n">objname</span><span class="p">]</span> <span class="o">=</span> <span class="n">properties</span> <span class="c1"># Load</span>
+
+                <span class="k">if</span> <span class="s1">&#39;redirect&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                    <span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">dirname</span>
+                    <span class="n">extfile</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dirname</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">extfile</span><span class="p">,</span> <span class="n">redirect</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">filepath</span> <span class="o">=</span> <span class="n">filepath</span>
+
+            <span class="c1"># Post-processing data</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">redirect</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">post_process_circuit</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">post_process_line</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">post_process_linecode</span><span class="p">()</span> <span class="c1"># convert string matrices to numpy arrays</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">post_process_capacitor</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">post_process_transformer</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="Dss.post_process_circuit"><a class="viewcode-back" href="../../pydse.html#pydse.pyopendss.Dss.post_process_circuit">[docs]</a>    <span class="k">def</span> <span class="nf">post_process_circuit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Additional parsing of ``circuit`` codes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">id_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">circuit</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;bus1&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">circuit</span><span class="p">[</span><span class="n">id_</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">circuit</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;bus1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;sourcebus&#39;</span>
+            <span class="k">if</span> <span class="s1">&#39;phases&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">circuit</span><span class="p">[</span><span class="n">id_</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">circuit</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;phases&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;3&#39;</span>
+            <span class="n">nph</span> <span class="o">=</span> <span class="nb">int</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">circuit</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;phases&#39;</span><span class="p">])</span>  
+            <span class="k">if</span> <span class="s1">&#39;.&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">circuit</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;bus1&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">circuit</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;bus1&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="s1">&#39;.1.2.3&#39;</span><span class="p">[:</span><span class="n">nph</span><span class="o">*</span><span class="mi">2</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="Dss.post_process_line"><a class="viewcode-back" href="../../pydse.html#pydse.pyopendss.Dss.post_process_line">[docs]</a>    <span class="k">def</span> <span class="nf">post_process_line</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Additional parsing of ``line`` codes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">id_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">line</span><span class="p">:</span>
+            <span class="c1"># filling default length</span>
+            <span class="k">if</span> <span class="s1">&#39;length&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">line</span><span class="p">[</span><span class="n">id_</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">line</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;length&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1.&#39;</span>
+
+            <span class="k">if</span> <span class="s1">&#39;units&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">line</span><span class="p">[</span><span class="n">id_</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">line</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;units&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="n">nph</span> <span class="o">=</span> <span class="nb">int</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">line</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;phases&#39;</span><span class="p">])</span>  
+
+            <span class="c1"># filling default phase sequence</span>
+            <span class="k">if</span> <span class="s1">&#39;.&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">line</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;bus1&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">line</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;bus1&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="s1">&#39;.1.2.3&#39;</span><span class="p">[:</span><span class="n">nph</span><span class="o">*</span><span class="mi">2</span><span class="p">]</span>
+
+            <span class="c1"># filling default phase sequence</span>
+            <span class="k">if</span> <span class="s1">&#39;.&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">line</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;bus2&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">line</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;bus2&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="s1">&#39;.1.2.3&#39;</span><span class="p">[:</span><span class="n">nph</span><span class="o">*</span><span class="mi">2</span><span class="p">]</span>                </div>
+
+
+<div class="viewcode-block" id="Dss.post_process_capacitor"><a class="viewcode-back" href="../../pydse.html#pydse.pyopendss.Dss.post_process_capacitor">[docs]</a>    <span class="k">def</span> <span class="nf">post_process_capacitor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Additional parsing of ``capacitor`` codes</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="k">for</span> <span class="n">id_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacitor</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="s1">&#39;Conn&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacitor</span><span class="p">[</span><span class="n">id_</span><span class="p">]</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacitor</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;Conn&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;delta&#39;</span> <span class="p">:</span> 
+                <span class="nb">print</span> <span class="p">(</span><span class="s1">&#39;Can&#39;&#39;t handle delt-connected capacitors yet!&#39;</span><span class="p">)</span>
+                <span class="n">exit</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="c1"># filling default number of phases</span>
+            <span class="k">if</span> <span class="s1">&#39;.&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacitor</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;bus1&#39;</span><span class="p">]:</span>
+                <span class="n">nph</span> <span class="o">=</span> <span class="nb">int</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">capacitor</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;phases&#39;</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">capacitor</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;bus1&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="s1">&#39;.1.2.3&#39;</span><span class="p">[:</span><span class="n">nph</span><span class="o">*</span><span class="mi">2</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="Dss.post_process_linecode"><a class="viewcode-back" href="../../pydse.html#pydse.pyopendss.Dss.post_process_linecode">[docs]</a>    <span class="k">def</span> <span class="nf">post_process_linecode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="c1"># transform string matrices into numpy arrays (adds new properties to linecode[][])</span>
+        <span class="sd">&quot;&quot;&quot;Additional parsing of ``linecode`` codes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">code</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linecode</span><span class="p">)</span> <span class="c1"># list with linecodes</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">code</span><span class="p">)):</span>
+
+            <span class="n">subkey</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linecode</span><span class="p">[</span><span class="n">code</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">if</span> <span class="s2">&quot;matrix&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="p">]</span> <span class="c1"># list of &#39;matrix&#39;-type subkeys</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">subkey</span><span class="p">)):</span>
+                <span class="n">rowmatrix</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;[\(\)\[\]]&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">linecode</span><span class="p">[</span><span class="n">code</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="n">subkey</span><span class="p">[</span><span class="n">j</span><span class="p">]])</span> <span class="c1"># removing parentheses</span>
+                <span class="n">rowmatrix</span> <span class="o">=</span> <span class="n">rowmatrix</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span> <span class="c1"># creating string array with matrix rows               </span>
+                <span class="n">nr</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">rowmatrix</span><span class="p">)</span> <span class="c1"># number of rows in the &#39;matrix&#39; property</span>
+                <span class="n">linecode_np</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nr</span><span class="p">,</span><span class="n">nr</span><span class="p">))</span>
+
+                <span class="n">nel</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># total number of elements read</span>
+                <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nr</span><span class="p">):</span>
+                    <span class="n">row</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">rowmatrix</span><span class="p">[</span><span class="n">r</span><span class="p">],</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+                    <span class="n">linecode_np</span><span class="p">[</span><span class="n">r</span><span class="p">,:</span><span class="nb">len</span><span class="p">(</span><span class="n">row</span><span class="p">)]</span> <span class="o">=</span> <span class="n">row</span>
+                    <span class="n">nel</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+
+                <span class="c1"># complete symmetric matrix</span>
+                <span class="n">nphases</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linecode</span><span class="p">[</span><span class="n">code</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="s1">&#39;nphases&#39;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">nel</span> <span class="o">&lt;</span> <span class="n">nphases</span><span class="o">*</span><span class="n">nphases</span><span class="p">:</span>
+                    <span class="n">linecode_np</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">linecode_np</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">linecode</span><span class="p">[</span><span class="n">code</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="n">subkey</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span><span class="s1">&#39;_np&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">linecode_np</span></div>
+
+
+<div class="viewcode-block" id="Dss.post_process_transformer"><a class="viewcode-back" href="../../pydse.html#pydse.pyopendss.Dss.post_process_transformer">[docs]</a>    <span class="k">def</span> <span class="nf">post_process_transformer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Additional parsing of ``transformer`` codes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Filling keys &#39;bus1&#39; and &#39;bus2&#39; for transformers</span>
+        <span class="k">for</span> <span class="n">id_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="p">:</span>
+            <span class="c1"># Handling arrays of bus tags</span>
+            <span class="n">transformer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="p">[</span><span class="n">id_</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;buses&#39;</span> <span class="ow">in</span> <span class="n">transformer</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">transformer</span><span class="p">[</span><span class="s1">&#39;buses&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Can&#39;&#39;t handle three-wind transformers&#39;</span><span class="p">)</span>
+                    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">bus1</span><span class="p">,</span> <span class="n">bus2</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;[\(\)\[\]]&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">transformer</span><span class="p">[</span><span class="s1">&#39;buses&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;bus1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bus1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;bus2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bus2</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;bus1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">transformer</span><span class="p">[</span><span class="s1">&#39;bus&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;bus2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">transformer</span><span class="p">[</span><span class="s1">&#39;bus.1&#39;</span><span class="p">]</span>
+            
+            <span class="c1"># Filling default phase sequence</span>
+            <span class="n">nph</span>  <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">transformer</span><span class="p">[</span><span class="s1">&#39;phases&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="s1">&#39;.&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">transformer</span><span class="p">[</span><span class="s1">&#39;bus1&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;bus1&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="s1">&#39;.1.2.3&#39;</span><span class="p">[:</span><span class="n">nph</span><span class="o">*</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;.&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;bus2&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;bus2&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="s1">&#39;.1.2.3&#39;</span><span class="p">[:</span><span class="n">nph</span><span class="o">*</span><span class="mi">2</span><span class="p">]</span>   
+                     
+            <span class="c1"># Removing []()&quot;&#39; from arrays</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="p">[</span><span class="n">id_</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;[\(\)\[\]&quot;</span><span class="se">\&#39;</span><span class="s1">]&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+            <span class="c1"># Filling default options</span>
+            <span class="k">if</span> <span class="s1">&#39;conns&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">transformer</span> <span class="ow">and</span> <span class="s1">&#39;conn&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">transformer</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;conns&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;wye wye&#39;</span>
+            <span class="k">if</span> <span class="s1">&#39;taps&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">transformer</span> <span class="ow">and</span> <span class="s1">&#39;tap&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">transformer</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="p">[</span><span class="n">id_</span><span class="p">][</span><span class="s1">&#39;taps&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1.0 1.0&#39;</span></div>
+
+
+<div class="viewcode-block" id="Dss.yfromcsv"><a class="viewcode-back" href="../../pydse.html#pydse.pyopendss.Dss.yfromcsv">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">yfromcsv</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves an Admittance matrix generated by OpenDSS from a csv file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+
+            <span class="n">lines</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+            <span class="n">dim</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">dim</span><span class="p">,</span><span class="n">dim</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)):</span>   <span class="c1"># first line has the array dimension</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;(.*?)\s*,\s*\+j\s*(.*?)\s*,&#39;</span><span class="p">,</span><span class="sa">r</span><span class="s1">&#39;\1+\2j ,&#39;</span><span class="p">,</span><span class="n">lines</span><span class="p">[</span><span class="n">l</span><span class="p">])</span> <span class="c1"># joining real and imaginary parts</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;\+-&#39;</span><span class="p">,</span><span class="s1">&#39;-&#39;</span><span class="p">,</span><span class="n">line</span><span class="p">)</span>
+                <span class="n">virg</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+                <span class="n">bus</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="n">virg</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;&quot;&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="n">virg</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+                <span class="n">line_fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+                
+                <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">range</span> <span class="p">(</span><span class="n">dim</span><span class="p">):</span>
+                    <span class="n">Y</span><span class="p">[</span><span class="n">l</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">f</span><span class="p">]</span> <span class="o">=</span> <span class="nb">complex</span><span class="p">(</span><span class="n">line_fields</span><span class="p">[</span><span class="n">f</span><span class="p">])</span>
+
+            <span class="k">return</span> <span class="n">Y</span></div>
+
+<div class="viewcode-block" id="Dss.read_vln_vll"><a class="viewcode-back" href="../../pydse.html#pydse.pyopendss.Dss.read_vln_vll">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">read_vln_vll</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read voltage output generated by OpenDSS</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filepath : `str`</span>
+<span class="sd">            OpenDSS file</span>
+<span class="sd">        source : `str`</span>
+<span class="sd">            Name of the source bus</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        vv : `pandas.Dataframe`</span>
+<span class="sd">            Dataframe holding line-to-neutral and line-to-line voltages.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
+        <span class="n">dots</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span><span class="o">*</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">source</span><span class="p">)</span><span class="o">-</span><span class="mi">4</span><span class="p">)</span>        
+        <span class="n">sio</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">dots</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">))</span>
+        <span class="n">dots</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span><span class="o">*</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">source</span><span class="p">)</span><span class="o">-</span><span class="mi">4</span><span class="p">)</span>
+
+        <span class="n">vv</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">sio</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;\s+&#39;</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="p">[</span><span class="o">*</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)],</span> <span class="n">header</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                         <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;bus&#39;</span><span class="p">,</span> <span class="s1">&#39;node&#39;</span><span class="p">,</span> <span class="s1">&#39;vln0-kv&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;vln0-ang&#39;</span><span class="p">,</span> <span class="s1">&#39;vln0-pu&#39;</span><span class="p">,</span> <span class="s1">&#39;basekv&#39;</span><span class="p">,</span>
+                                  <span class="s1">&#39;node-node&#39;</span><span class="p">,</span> <span class="s1">&#39;vll0-kv&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;vll0-ang&#39;</span><span class="p">,</span> <span class="s1">&#39;vll0-pu&#39;</span><span class="p">],</span>
+                         <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="o">*</span><span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="o">*</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">9</span><span class="p">),</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span> <span class="p">])</span>
+        
+        <span class="k">return</span> <span class="n">vv</span> <span class="c1"># database with phase and line voltages</span></div></div>
+
+
+
+
+
+
+
+                                        
+
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Eduardo Werley.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

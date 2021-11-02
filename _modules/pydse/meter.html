@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pydse.meter &mdash; PyDSE 1.0.0-rc.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> PyDSE
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Pydse API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyDSE</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+          <li><a href="../pydse.html">pydse</a> &raquo;</li>
+      <li>pydse.meter</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pydse.meter</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">pydse.meas</span> <span class="kn">import</span> <span class="n">Meas</span>
+
+<div class="viewcode-block" id="Meter"><a class="viewcode-back" href="../../pydse.html#pydse.meter.Meter">[docs]</a><span class="k">class</span> <span class="nc">Meter</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A class to represent measurement devices</span>
+
+<span class="sd">        The measurements are added using the addMeter function. Each one is </span>
+<span class="sd">        internally stored in the `meter` list, which is a list of Meas objects.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meter</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nm</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># total number of measurements stored in ``meter``</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nmi</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># number of inactive measurements</span>
+
+<div class="viewcode-block" id="Meter.add"><a class="viewcode-back" href="../../pydse.html#pydse.meter.Meter.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">location</span><span class="p">,</span> <span class="n">accuracy</span><span class="p">,</span> <span class="n">active</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a measurement to the internal meter object</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        type : {&#39;ikm&#39;,&#39;skm&#39;,&#39;i&#39;,&#39;q&#39;}, default &#39;ikm&#39;</span>
+<span class="sd">            Type of measurement to be added</span>
+<span class="sd">        value : `list` [`float`]</span>
+<span class="sd">            Value of the measurement</span>
+<span class="sd">        nodes : `str`</span>
+<span class="sd">            Node(s) identifier</span>
+<span class="sd">        location : `str`</span>
+<span class="sd">            Location of measurement.</span>
+<span class="sd">        accuracy : `float`</span>
+<span class="sd">            Measurement accuracy (unitary)</span>
+<span class="sd">        active : `bool`, default True</span>
+<span class="sd">            Enable status</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">meas</span> <span class="o">=</span> <span class="n">Meas</span><span class="p">(</span> <span class="nb">type</span><span class="o">=</span><span class="nb">type</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="n">location</span><span class="p">,</span> 
+                           <span class="n">nodes</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> 
+                           <span class="n">accuracy</span><span class="o">=</span><span class="n">accuracy</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="n">active</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meter</span> <span class="o">+=</span> <span class="p">[</span><span class="n">meas</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nm</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">active</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nmi</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Meter.disable"><a class="viewcode-back" href="../../pydse.html#pydse.meter.Meter.disable">[docs]</a>    <span class="k">def</span> <span class="nf">disable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">meas</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Disable a measurement stored in the internal meter object</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        meas : `~pydse.meas.Meas`</span>
+<span class="sd">            Measurement object to be deactivated</span>
+
+<span class="sd">        Note</span>
+<span class="sd">        ----</span>
+<span class="sd">        For a multi-phase measurement, all measurements will be disabled.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">meas</span><span class="o">.</span><span class="n">active</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">meas</span><span class="o">.</span><span class="n">disable</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nmi</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">nmeters</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meter</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nmeters</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>            
+            <span class="k">return</span> <span class="s1">&#39;There are no measurement devices available&#39;</span>
+
+        <span class="n">output</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">nmeters</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">BE</span> <span class="o">=</span> <span class="s1">&#39;is&#39;</span>
+            <span class="n">METER</span> <span class="o">=</span> <span class="s1">&#39;meter&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">BE</span> <span class="o">=</span> <span class="s1">&#39;are&#39;</span>
+            <span class="n">METER</span> <span class="o">=</span> <span class="s1">&#39;meters&#39;</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;There&#39;</span><span class="p">,</span> <span class="n">BE</span> <span class="p">,</span><span class="n">nmeters</span><span class="p">,</span> <span class="n">METER</span><span class="p">,</span> <span class="s1">&#39;available (total of&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nm</span><span class="p">,</span> <span class="s1">&#39;measurements):</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meter</span><span class="p">)):</span>
+            <span class="c1">#print(self.meter[m], file=output)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;{{&#39;type&#39;: &#39;</span><span class="si">{}</span><span class="s2">&#39;, &#39;location&#39;: </span><span class="si">{}</span><span class="s2">, &#39;nodes&#39;: &#39;</span><span class="si">{}</span><span class="s2">&#39;, &#39;value&#39;: </span><span class="si">{}</span><span class="s2">, &#39;accuracy&#39;: </span><span class="si">{}</span><span class="s2">}}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                            <span class="bp">self</span><span class="o">.</span><span class="n">meter</span><span class="p">[</span><span class="n">m</span><span class="p">]</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> 
+                                            <span class="bp">self</span><span class="o">.</span><span class="n">meter</span><span class="p">[</span><span class="n">m</span><span class="p">]</span><span class="o">.</span><span class="n">location</span><span class="p">,</span> 
+                                            <span class="bp">self</span><span class="o">.</span><span class="n">meter</span><span class="p">[</span><span class="n">m</span><span class="p">]</span><span class="o">.</span><span class="n">nodes</span><span class="p">,</span> 
+                                            <span class="p">[</span><span class="s1">&#39;</span><span class="si">{:.4g}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">meter</span><span class="p">[</span><span class="n">m</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">],</span> 
+                                            <span class="bp">self</span><span class="o">.</span><span class="n">meter</span><span class="p">[</span><span class="n">m</span><span class="p">]</span><span class="o">.</span><span class="n">accuracy</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">output</span><span class="p">))</span>
+        <span class="n">str_out</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+        <span class="n">output</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">str_out</span>
+
+<div class="viewcode-block" id="Meter.nmt"><a class="viewcode-back" href="../../pydse.html#pydse.meter.Meter.nmt">[docs]</a>    <span class="k">def</span> <span class="nf">nmt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the number of meters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meter</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Meter.nm"><a class="viewcode-back" href="../../pydse.html#pydse.meter.Meter.nm">[docs]</a>    <span class="k">def</span> <span class="nf">nm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the total number (active and inactive) of measurements</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nm</span><span class="p">)</span>        </div>
+
+<div class="viewcode-block" id="Meter.nma"><a class="viewcode-back" href="../../pydse.html#pydse.meter.Meter.nma">[docs]</a>    <span class="k">def</span> <span class="nf">nma</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the number of active measurements</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nm</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nmi</span><span class="p">)</span>                </div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Eduardo Werley.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,69 @@
+pydse package
+=============
+
+Submodules
+----------
+
+pydse.pyopendss module
+----------------------
+
+.. automodule:: pydse.pyopendss
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pydse.powergrid module
+----------------------
+
+.. automodule:: pydse.powergrid
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pydse.loadflow module
+---------------------
+
+.. automodule:: pydse.loadflow
+   :members:
+   :undoc-members:
+   :show-inheritance:   
+
+pydse.dse module
+----------------
+
+.. automodule:: pydse.dse
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pydse.meas module
+-----------------
+
+.. automodule:: pydse.meas
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pydse.meter module
+------------------
+
+.. automodule:: pydse.meter
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pydse.gridutils module
+----------------------
+
+.. automodule:: pydse.gridutils
+   :members:
+   :undoc-members:
+   :show-inheritance:   
+
+Module contents
+---------------
+
+.. automodule:: pydse
+   :members:
+   :undoc-members:
+   :show-inheritance:

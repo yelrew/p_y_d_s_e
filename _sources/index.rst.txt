@@ -1,0 +1,38 @@
+.. PyDSE documentation master file, created by
+   sphinx-quickstart on Fri Oct 29 16:22:31 2021.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+PyDSE - A Python solution for State Estimation in Distribution Systems
+======================================================================
+
+:Author: Eduardo Werley
+:Source: https://github.com/yelrew/pydse
+:Issues: https://github.com/yelrew/pydse/issues
+:Generated: |today|
+:Version: |release|
+
+
+.. .. toctree::
+
+.. readme
+
+.. include:: ../../README.rst
+
+
+Full API
+++++++++
+
+.. toctree::
+    :maxdepth: 2
+
+    modules
+
+
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
