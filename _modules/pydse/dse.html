@@ -241,13 +241,13 @@
 
 <span class="sd">        &gt;&gt;&gt; from pydse.dse import Dse</span>
 <span class="sd">        &gt;&gt;&gt; dse = Dse(filename=&quot;data/IEEE13mod.dss&quot;)</span>
-<span class="sd">        &gt;&gt;&gt; dse.addMeasRT(&#39;skm&#39;, location=&#39;632-670&#39;, nodes=&#39;123&#39;, accuracy= 0.0,</span>
+<span class="sd">        &gt;&gt;&gt; dse.addMeas_Realtime(&#39;skm&#39;, location=&#39;632-670&#39;, nodes=&#39;123&#39;, accuracy= 0.0,</span>
 <span class="sd">        value=[1.06725092e6+0.48933956e6j, 524.04365e3+125.60266e3j, 1.10045821e6+0.36163657e6j])</span>
 
 <span class="sd">        Adds the complex power drawn by the load at bus 611 and node 3.</span>
 <span class="sd">        &gt;&gt;&gt; from pydse.dse import Dse</span>
 <span class="sd">        &gt;&gt;&gt; dse = Dse(filename=&quot;data/IEEE13mod.dss&quot;)</span>
-<span class="sd">        &gt;&gt;&gt; dse.addMeasRT(&#39;s-pseudo&#39;, location=&#39;611&#39;, nodes=&#39;3&#39;, accuracy= 0.0, value=163.5e3-15.54e3j)</span>
+<span class="sd">        &gt;&gt;&gt; dse.addMeas_Realtime(&#39;s-pseudo&#39;, location=&#39;611&#39;, nodes=&#39;3&#39;, accuracy= 0.0, value=163.5e3-15.54e3j)</span>
 <span class="sd">        &quot;&quot;&quot;</span>        
    
         <span class="c1"># Checking validity of measurement location</span>
