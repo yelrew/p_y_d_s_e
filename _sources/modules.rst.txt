@@ -1,5 +1,5 @@
-Pydse API
-=========
+pydse
+=====
 
 .. toctree::
    :maxdepth: 4

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PyDSE &mdash; PyDSE 1.0.0-rc.1 documentation</title>
+  <title>PyDSE &mdash; PyDSE 1.0.0 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -36,7 +36,7 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
-<li class="toctree-l1"><a class="reference internal" href="modules.html">Pydse API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">pydse</a></li>
 </ul>
 
         </div>
@@ -91,6 +91,14 @@ Branch-Current Estimator on the IEEE-34 feeder in dss format:</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span><span class="o">.</span><span class="n">addMeas</span><span class="p">(</span><span class="s1">&#39;skm&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">accuracy</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span><span class="o">.</span><span class="n">addMeas</span><span class="p">(</span><span class="s1">&#39;s-pseudo&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;load&#39;</span><span class="p">,</span> <span class="n">ignore</span><span class="o">=</span><span class="s1">&#39;prim&#39;</span><span class="p">,</span> <span class="n">accuracy</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span><span class="o">.</span><span class="n">runDSE</span><span class="p">(</span><span class="n">report</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>It is also possible to add real-time measurements with actual values:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pydse.dse</span> <span class="kn">import</span> <span class="n">Dse</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span> <span class="o">=</span> <span class="n">Dse</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;data/IEEE13mod.dss&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span><span class="o">.</span><span class="n">addMeasRT</span><span class="p">(</span><span class="s1">&#39;skm&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;632-670&#39;</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="s1">&#39;123&#39;</span><span class="p">,</span> <span class="n">accuracy</span><span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="go">value=[1.06725092e6+0.48933956e6j, 524.04365e3+125.60266e3j, 1.10045821e6+0.36163657e6j])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span><span class="o">.</span><span class="n">addMeasRT</span><span class="p">(</span><span class="s1">&#39;s-pseudo&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;611&#39;</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="n">accuracy</span><span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">163.5e3</span><span class="o">-</span><span class="mf">15.54e3</span><span class="n">j</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Additional examples and data files can be found in the <a class="reference external" href="https://github.com/yelrew/pydse/tree/master/pydse/examples">examples</a> directory
