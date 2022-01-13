@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pydse.pyopendss &mdash; PyDSE 1.0.0 documentation</title>
+  <title>pydse.pyopendss &mdash; PyDSE 1.0.1 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -396,8 +396,8 @@
         <span class="n">dots</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span><span class="o">*</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">source</span><span class="p">)</span><span class="o">-</span><span class="mi">4</span><span class="p">)</span>
 
         <span class="n">vv</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">sio</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;\s+&#39;</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="p">[</span><span class="o">*</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)],</span> <span class="n">header</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                         <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;bus&#39;</span><span class="p">,</span> <span class="s1">&#39;node&#39;</span><span class="p">,</span> <span class="s1">&#39;vln0-kv&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;vln0-ang&#39;</span><span class="p">,</span> <span class="s1">&#39;vln0-pu&#39;</span><span class="p">,</span> <span class="s1">&#39;basekv&#39;</span><span class="p">,</span>
-                                  <span class="s1">&#39;node-node&#39;</span><span class="p">,</span> <span class="s1">&#39;vll0-kv&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;vll0-ang&#39;</span><span class="p">,</span> <span class="s1">&#39;vll0-pu&#39;</span><span class="p">],</span>
+                         <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;bus&#39;</span><span class="p">,</span> <span class="s1">&#39;node&#39;</span><span class="p">,</span> <span class="s1">&#39;vln-kv&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;vln-ang&#39;</span><span class="p">,</span> <span class="s1">&#39;vln-pu&#39;</span><span class="p">,</span> <span class="s1">&#39;basekv&#39;</span><span class="p">,</span>
+                                  <span class="s1">&#39;node-node&#39;</span><span class="p">,</span> <span class="s1">&#39;vll-kv&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;vll-ang&#39;</span><span class="p">,</span> <span class="s1">&#39;vll-pu&#39;</span><span class="p">],</span>
                          <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="o">*</span><span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="o">*</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">9</span><span class="p">),</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span> <span class="p">])</span>
         
         <span class="k">return</span> <span class="n">vv</span> <span class="c1"># database with phase and line voltages</span></div></div>
@@ -421,7 +421,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2021, Eduardo Werley.</p>
+    <p>&#169; Copyright 2022, Eduardo Werley.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
