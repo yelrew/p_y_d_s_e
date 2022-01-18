@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pydse.powergrid &mdash; PyDSE 1.0.0 documentation</title>
+  <title>pydse.powergrid &mdash; PyDSE 1.1 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -882,7 +882,7 @@
         <span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">times</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">times_data</span><span class="p">[</span><span class="s1">&#39;Build of the admittance matrix ~ grid.build_Y()&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">times_data</span><span class="p">[</span><span class="s1">&#39;Construction of the admittance matrix ~ grid.build_Y()&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span></div>
 
 
 <div class="viewcode-block" id="Powergrid.init_E"><a class="viewcode-back" href="../../pydse.html#pydse.powergrid.Powergrid.init_E">[docs]</a>    <span class="k">def</span> <span class="nf">init_E</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mult</span><span class="o">=</span><span class="p">[</span><span class="mf">1.</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mf">1.</span><span class="p">],</span> <span class="n">new</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -1169,6 +1169,7 @@
                 <span class="n">Ip</span> <span class="o">=</span> <span class="n">Yp</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">E</span><span class="p">[</span><span class="n">ik_bus</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">E</span><span class="p">[</span><span class="n">im_bus</span><span class="p">])))</span>
                 <span class="c1">#ikm = -Ip[3:] # currents flowing out of the secondary side</span>
                 <span class="n">ikm</span> <span class="o">=</span> <span class="o">-</span><span class="n">Ip</span><span class="p">[</span><span class="mi">3</span><span class="p">:][</span><span class="n">imnodes</span><span class="p">]</span>
+                <span class="n">Ek</span> <span class="o">=</span> <span class="n">Em</span> <span class="c1"># voltage is at the secondary side</span>
 
             <span class="n">skm</span> <span class="o">=</span> <span class="n">Ek</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">conjugate</span> <span class="p">(</span><span class="n">ikm</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">Ikm</span><span class="p">[</span><span class="n">j</span><span class="p">:</span><span class="n">j</span><span class="o">+</span><span class="n">nph</span><span class="p">]</span> <span class="o">=</span> <span class="n">ikm</span>
@@ -1189,7 +1190,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2021, Eduardo Werley.</p>
+    <p>&#169; Copyright 2022, Eduardo Werley.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pydse package &mdash; PyDSE 1.0.1 documentation</title>
+  <title>pydse package &mdash; PyDSE 1.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -105,7 +105,7 @@ relevant branches that need additional measurements is provided.</p>
 <li><p><strong>grid</strong> (<cite>powergrid</cite>) – Power system represented in a Powergrid object.
 If not provided, a grid object will be generated based on <cite>filename</cite></p></li>
 <li><p><strong>filename</strong> (<cite>string</cite>, optional) – Optional filename to instantiate the Powergrid object</p></li>
-<li><p><strong>loadflow</strong> (<cite>Loadflow</cite>) – Holds a loadflow object, if measurement generation is requested.</p></li>
+<li><p><strong>loadflow</strong> (<cite>Loadflow</cite>) – If measurement generation is requested, holds the loadflow object</p></li>
 <li><p><strong>meter</strong> (list [<cite>Meter</cite>]) – Stores the measurements available in a <cite>Meter</cite> object</p></li>
 <li><p><strong>indexbr</strong> (<cite>dict</cite> [<cite>str</cite>, <cite>dict</cite>]) – Associative array with index information for each branch km.
 The key represents busk, and the values hold busm and the location
@@ -168,65 +168,93 @@ flow or injection measurements.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydse.dse.Dse.addMeas">
-<span class="sig-name descname"><span class="pre">addMeas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ikm'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accuracy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">active</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grosserror</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pydse/dse.html#Dse.addMeas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pydse.dse.Dse.addMeas" title="Permalink to this definition"></a></dt>
-<dd><p>Add artificial measurements from load flow</p>
-<p>The generated measurements can be of current or power <cite>type</cite> (flow or injection).
-The noise level for each measurements is defined by the <cite>accuracy</cite> parameter,
-which represents the reliability of the corresponding meter.</p>
+<span class="sig-name descname"><span class="pre">addMeas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ikm'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accuracy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">active</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grosserror</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pydse/dse.html#Dse.addMeas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pydse.dse.Dse.addMeas" title="Permalink to this definition"></a></dt>
+<dd><p>Add measurements (real or artificial) for State Estimation</p>
+<p>The measurements can be of of current or power <cite>type</cite> (flow or injection).
+If the measurement value is not provided, an artificial measurement will be automatically
+generated from the Load Flow, with a random noise based on the <cite>accuracy</cite> field. This
+parameter should reflect the reliability degree of the corresponding meter.
+The <cite>grosserror</cite> option allows simulating bad data in the load flow measurement.
+Artificial measurements can be generated for a group of buses/branches and nodes.
+By default, a new measurement is considered ‘active’ for State Estimation purposes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>type</strong> (<em>string, {‘ikm’,’skm’,’i’,’s-pseudo’}, default ‘ikm’</em>) – Type of measurement to add.</p></li>
-<li><p><strong>nodes</strong> (<em>string, {‘123’, ‘12’}, default ‘all’</em>) – Nodes to which the measurement are connected to. It defaults to ‘all’, which
-means all available nodes</p></li>
-<li><p><strong>location</strong> (<em>{‘bus’, ‘bus1-bus2’}, default ‘all’</em>) – Location to place the measurement. If bus, it should be the bus number or
-a range of buses. If branch measurement, the terminal buses should be provided,
+<li><p><strong>type</strong> (<em>string, {‘ikm’,’skm’,’i’,’s’}, default ‘ikm’</em>) – Type of measurement to add.
+Injection measurements with negative signal.</p></li>
+<li><p><strong>nodes</strong> (<em>string, {‘123’, ‘12’}, default ‘all’</em>) – Nodes to which the measurement are connected to. It defaults to ‘all’, meaning
+all available nodes.</p></li>
+<li><p><strong>location</strong> (<em>{‘bus’, ‘bus1-bus2’, ‘branch’}, default ‘all’</em>) – Location to place the measurement. If bus, the bus number or a range of buses.
+should be provided. If branch measurement, the terminal buses should be provided,
 separated by a dash. The full branch id is also accepted.
-Multiple locations are supported by separating the fields with comma.</p></li>
-<li><p><strong>ignore</strong> (<em>{‘src’, ‘bus’}, optional</em>) – Buses to be ignored when generating the measurements, by default None.</p></li>
+When adding artificial measurements, multiple locations are supported by separating
+the locations with a comma.</p></li>
+<li><p><strong>value</strong> (<cite>list</cite> [<cite>float</cite>]) – Measurement values (actual values in kW or MW). Three-phase values should
+be entered in a list. If None, the values will be calculated from load flow.</p></li>
 <li><p><strong>accuracy</strong> (<em>float, default 0.</em>) – Measurement accuracy (0 to 1)</p></li>
 <li><p><strong>active</strong> (<em>bool, default True</em>) – If true, the measurement is active</p></li>
-<li><p><strong>grosserror</strong> (<cite>float</cite>, default 0.) – Gross error to be added to the measurement</p></li>
+<li><p><strong>**Options for artificial measurements generation**</strong></p></li>
+<li><p><strong>ignore</strong> (<em>{‘src’, ‘bus’}, optional</em>) – Buses to be ignored when generating the measurements, by default None.</p></li>
+<li><p><strong>grosserror</strong> (<cite>float</cite>, optional, by default 0.) – Gross error to be added to the measurement</p></li>
 </ul>
 </dd>
 </dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Measurements with values are added through the function
+<a class="reference internal" href="#pydse.dse.Dse.addMeas_Realtime" title="pydse.dse.Dse.addMeas_Realtime"><code class="xref py py-func docutils literal notranslate"><span class="pre">addMeas_Realtime()</span></code></a> (to be deprecated).</p>
+</div>
 <p class="rubric">Examples</p>
-<p>Add pseudo- load power measurement to all buses except bus ‘src’, including all
-nodes available on each bus.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pydse.dse</span> <span class="kn">import</span> <span class="n">Dse</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span> <span class="o">=</span> <span class="n">Dse</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;&lt;.dss filename&gt;&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span><span class="o">.</span><span class="n">addMeas</span><span class="p">(</span><span class="s1">&#39;s-pseudo&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="n">ignore</span><span class="o">=</span><span class="s1">&#39;src&#39;</span><span class="p">)</span>
+<p>Add the power flows measured in the line between buses 632 and 670, for all nodes.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span><span class="o">.</span><span class="n">addMeas</span><span class="p">(</span><span class="s1">&#39;skm&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;632-670&#39;</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="s1">&#39;123&#39;</span><span class="p">,</span>
+<span class="go">        value=[1.06725092e6+0.48933956e6j, 524.04365e3+125.60266e3j,</span>
+<span class="go">               1.10045821e6+0.36163657e6j])</span>
 </pre></div>
 </div>
-<p>Add current injection measurments to buses 611, 684, 652, 671, 680, 692, 675, 670:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span><span class="o">.</span><span class="n">addMeas</span><span class="p">(</span><span class="s1">&#39;s-pseudo&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;611, 684, 652, 671, 680, 692, 675, 670&#39;</span><span class="p">)</span>
+<p>Same as before, except that the actual branch name is provided.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span><span class="o">.</span><span class="n">addMeas</span><span class="p">(</span><span class="s1">&#39;skm&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;650632&#39;</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="s1">&#39;123&#39;</span><span class="p">,</span>
+<span class="go">        value=[1.252e+06+6.85e+05j, 9.728e+05+3.792e+05j, 1.342e+06+6.72e+05j])</span>
 </pre></div>
 </div>
-<p>Add flow measurements to the transformer XFM1, Sub and branch 650-632:</p>
+<p>Add a power measurement of the load in bus 611, node 3.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span><span class="o">.</span><span class="n">addMeas</span><span class="p">(</span><span class="s1">&#39;s&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;611&#39;</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">163.5e3</span><span class="o">-</span><span class="mf">15.54e3</span><span class="n">j</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Add artificial power measurements from load flow to all buses except bus ‘src’, at
+all nodes available in each bus.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span><span class="o">.</span><span class="n">addMeas</span><span class="p">(</span><span class="s1">&#39;s&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="n">ignore</span><span class="o">=</span><span class="s1">&#39;src&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Add power measurements from LF to buses 611, 684, 652, 671, 680, 692, 675, 670:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span><span class="o">.</span><span class="n">addMeas</span><span class="p">(</span><span class="s1">&#39;s&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;611, 684, 652, 671, 680, 692, 675, 670&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Add power flow measurements from LF to the transformers XFM1, Sub, and branch 650-632:</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span><span class="o">.</span><span class="n">addMeas</span><span class="p">(</span><span class="s1">&#39;Skm&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;XFM1, 650-632, Sub&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Add flow measurement to branch 645-646, nodes 2 and 3, with 10% accuracy:</p>
+<p>Add a flow measurement from LF to branch 645-646, at nodes 2 and 3, with 10% accuracy:</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span><span class="o">.</span><span class="n">addMeas</span><span class="p">(</span><span class="s1">&#39;skm&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;645-646&#39;</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="s1">&#39;23&#39;</span><span class="p">,</span> <span class="n">accuracy</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Add a pseudo- load in bus 611, with gross error 0.9 (90% times the expected accuracy)</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span><span class="o">.</span><span class="n">addMeas</span><span class="p">(</span><span class="s1">&#39;s-pseudo&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;611&#39;</span><span class="p">,</span> <span class="n">accuracy</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">grosserror</span><span class="o">=</span> <span class="mf">0.9</span> <span class="p">)</span>
+<p>Add a power measurement from LF to bus 611, with gross error 0.9
+(90% times the expected accuracy)</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span><span class="o">.</span><span class="n">addMeas</span><span class="p">(</span><span class="s1">&#39;s&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;611&#39;</span><span class="p">,</span> <span class="n">accuracy</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">grosserror</span><span class="o">=</span> <span class="mf">0.9</span> <span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydse.dse.Dse.addMeas_Realtime">
-<span class="sig-name descname"><span class="pre">addMeas_Realtime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">location</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accuracy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pydse/dse.html#Dse.addMeas_Realtime"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pydse.dse.Dse.addMeas_Realtime" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">addMeas_Realtime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">location</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accuracy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">active</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pydse/dse.html#Dse.addMeas_Realtime"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pydse.dse.Dse.addMeas_Realtime" title="Permalink to this definition"></a></dt>
 <dd><p>Add a real-time measurement</p>
 <p>Currently, the following measurements are allowed: ‘skm’ (complex power flow)
-and ‘s-pseudo’ (complex pseudo-load). The measurement values should be provided
+and ‘s’ (complex pseudo-load). The measurement values should be provided
 in real unities (e.g. kW).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>type</strong> (<em>{‘skm’,’s-pseudo’},</em>) – Measurement type.</p></li>
+<li><p><strong>type</strong> (<em>{‘skm’,’s’},</em>) – Measurement type.</p></li>
 <li><p><strong>location</strong> (<cite>str</cite>) – The identifier of the bus or branch associated with the measurement</p></li>
 <li><p><strong>nodes</strong> (<cite>str</cite>) – Nodes to which the measurement are connected to. Example, ‘1’, or ‘123’.
 More than one node indicates a three-phase measurement.</p></li>
@@ -236,8 +264,13 @@ be entered in a list.</p></li>
 </ul>
 </dd>
 </dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#pydse.dse.Dse.addMeas_Realtime" title="pydse.dse.Dse.addMeas_Realtime"><code class="xref py py-func docutils literal notranslate"><span class="pre">addMeas_Realtime()</span></code></a> should be deprecated in the future.
+Use <a class="reference internal" href="#pydse.dse.Dse.addMeas" title="pydse.dse.Dse.addMeas"><code class="xref py py-func docutils literal notranslate"><span class="pre">addMeas()</span></code></a>  instead.</p>
+</div>
 <p class="rubric">Examples</p>
-<p>Adds the real-time (three-phase) power flows measured in branch 632-670.</p>
+<p>Adds a real-time (three-phase) power flow measured in branch 632-670.</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pydse.dse</span> <span class="kn">import</span> <span class="n">Dse</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span> <span class="o">=</span> <span class="n">Dse</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;data/IEEE13mod.dss&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span><span class="o">.</span><span class="n">addMeas_Realtime</span><span class="p">(</span><span class="s1">&#39;skm&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;632-670&#39;</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="s1">&#39;123&#39;</span><span class="p">,</span> <span class="n">accuracy</span><span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
@@ -247,7 +280,7 @@ be entered in a list.</p></li>
 <p>Adds the complex power drawn by the load at bus 611 and node 3.</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pydse.dse</span> <span class="kn">import</span> <span class="n">Dse</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span> <span class="o">=</span> <span class="n">Dse</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;data/IEEE13mod.dss&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span><span class="o">.</span><span class="n">addMeas_Realtime</span><span class="p">(</span><span class="s1">&#39;s-pseudo&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;611&#39;</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="n">accuracy</span><span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">163.5e3</span><span class="o">-</span><span class="mf">15.54e3</span><span class="n">j</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dse</span><span class="o">.</span><span class="n">addMeas_Realtime</span><span class="p">(</span><span class="s1">&#39;s&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;611&#39;</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="n">accuracy</span><span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">163.5e3</span><span class="o">-</span><span class="mf">15.54e3</span><span class="n">j</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -345,13 +378,14 @@ vector Z and H matrix.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydse.dse.Dse.runDSE">
-<span class="sig-name descname"><span class="pre">runDSE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'branch-current'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">checkerrors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reportmeas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reportv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reporti</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pydse/dse.html#Dse.runDSE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pydse.dse.Dse.runDSE" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">runDSE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'branch-current'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">checkerrors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_loadflow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reportmeas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reportv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reporti</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pydse/dse.html#Dse.runDSE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pydse.dse.Dse.runDSE" title="Permalink to this definition"></a></dt>
 <dd><p>Wrapper class for performing a Distributed State Estimator</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>method</strong> (<cite>str</cite>, optional) – Solution method, by default ‘branch-current’</p></li>
-<li><p><strong>checkerrors</strong> (<cite>bool</cite>, default True) – If <cite>False</cite>, ignore the gross error processing.</p></li>
+<li><p><strong>checkerrors</strong> (<cite>bool</cite>, default True) – If <cite>True</cite>, perform gross error analysis.</p></li>
+<li><p><strong>show_loadflow</strong> (<cite>bool</cite>, default True) – If <cite>True</cite>, show the ‘true’ branch currents calculated from load flow.</p></li>
 <li><p><strong>report</strong> (<em>bool, optional, default False</em>) – Print a main summary report</p></li>
 <li><p><strong>reportmeas</strong> (<em>bool, default True</em>) – If <code class="docutils literal notranslate"><span class="pre">report</span></code> is enabled, print the measurement set</p></li>
 <li><p><strong>reportv</strong> (<em>bool, default True</em>) – If <code class="docutils literal notranslate"><span class="pre">report</span></code> is enabled, print the voltage profile</p></li>
@@ -359,15 +393,15 @@ vector Z and H matrix.</p>
 </ul>
 </dd>
 </dl>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
+<p class="rubric">Notes</p>
 <p>The error detection process is activated by default.
 Note that noisy artificial measurements, as the ones generated
 by <a class="reference internal" href="#pydse.dse.Dse.addMeas" title="pydse.dse.Dse.addMeas"><code class="xref py py-func docutils literal notranslate"><span class="pre">addMeas()</span></code></a> can easily trigger the detection
 threshold.
 If this is not the intended behaviour, one should disable the error
 check or increment <code class="xref py py-attr docutils literal notranslate"><span class="pre">r_thres</span></code>.</p>
-</div>
+<p>When running the DSE, the load flow ‘true’ solution will be automatically
+generated and added to the report, via the <code class="docutils literal notranslate"><span class="pre">show_loadflow</span></code> parameter.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -392,7 +426,7 @@ using Kirchhoff’s Voltage Law.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydse.gridutils.summary_lf">
-<span class="sig-prename descclassname"><span class="pre">pydse.gridutils.</span></span><span class="sig-name descname"><span class="pre">summary_lf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lf_res</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">times</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_opendss_voltages</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pydse/gridutils.html#summary_lf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pydse.gridutils.summary_lf" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pydse.gridutils.</span></span><span class="sig-name descname"><span class="pre">summary_lf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lf_res</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">times</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_opendss_voltages</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_powerflows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pydse/gridutils.html#summary_lf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pydse.gridutils.summary_lf" title="Permalink to this definition"></a></dt>
 <dd><p>Generates a voltage report for the current power system</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -402,6 +436,7 @@ using Kirchhoff’s Voltage Law.</p>
 <li><p><strong>show_opendss_voltages</strong> (<cite>bool</cite>, default False) – If True, import and print the voltage profile file generated by OpenDSS.
 A file named &lt;filename&gt;_VLN_Node.Txt should be present in the current
 folder.</p></li>
+<li><p><strong>reportpf</strong> (<cite>bool</cite>, default False) – Print a power flow report</p></li>
 </ul>
 </dd>
 </dl>
@@ -453,7 +488,7 @@ err (float): maximum absolute error of voltage magnitude</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydse.loadflow.Loadflow.loadflow">
-<span class="sig-name descname"><span class="pre">loadflow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'zbus'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">times</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_opendss_voltages</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pydse/loadflow.html#Loadflow.loadflow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pydse.loadflow.Loadflow.loadflow" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">loadflow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'zbus'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">times</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_opendss_voltages</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_powerflows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pydse/loadflow.html#Loadflow.loadflow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pydse.loadflow.Loadflow.loadflow" title="Permalink to this definition"></a></dt>
 <dd><p>Runs loadflow</p>
 <p>Runs the loadflow on a powergrid represented in the ‘grid’ object.
 The methods currently available are ‘zbus’ and ‘gauss-seidel’.</p>
@@ -463,6 +498,7 @@ The methods currently available are ‘zbus’ and ‘gauss-seidel’.</p>
 <li><p><strong>method</strong> (<em>{‘zbus’, ‘gauss-seidel’}</em>) – Load flow Method, by default ‘gauss-seidel’</p></li>
 <li><p><strong>tol</strong> (<cite>float</cite>, optional) – Tolerance (default 1e-6)</p></li>
 <li><p><strong>report</strong> (<cite>bool</cite>, default False) – Print an output report</p></li>
+<li><p><strong>reportpf</strong> (<cite>bool</cite>, default False) – Print a power flow report</p></li>
 <li><p><strong>timings</strong> (<cite>bool</cite>, default False) – Enable the timings report</p></li>
 <li><p><strong>show_opendss_voltages</strong> (<cite>bool</cite>, default False) – If True, import and print the voltage profile file generated by OpenDSS.
 A file named &lt;filename&gt;_VLN_Node.Txt should be present in the current

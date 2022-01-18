@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pydse.loadflow &mdash; PyDSE 1.0.1 documentation</title>
+  <title>pydse.loadflow &mdash; PyDSE 1.1 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -119,7 +119,7 @@
 
 
 <div class="viewcode-block" id="Loadflow.loadflow"><a class="viewcode-back" href="../../pydse.html#pydse.loadflow.Loadflow.loadflow">[docs]</a>    <span class="k">def</span> <span class="nf">loadflow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;zbus&#39;</span><span class="p">,</span> <span class="n">report</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">times</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                    <span class="n">show_opendss_voltages</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                    <span class="n">show_opendss_voltages</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_powerflows</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Runs loadflow</span>
 <span class="sd">        </span>
 <span class="sd">        Runs the loadflow on a powergrid represented in the &#39;grid&#39; object.</span>
@@ -133,6 +133,8 @@
 <span class="sd">            Tolerance (default 1e-6)</span>
 <span class="sd">        report : `bool`, default False</span>
 <span class="sd">            Print an output report</span>
+<span class="sd">        reportpf : `bool`, default False</span>
+<span class="sd">            Print a power flow report            </span>
 <span class="sd">        timings : `bool`, default False</span>
 <span class="sd">            Enable the timings report</span>
 <span class="sd">        show_opendss_voltages: `bool`, default False</span>
@@ -174,12 +176,12 @@
 
         <span class="n">grid</span><span class="o">.</span><span class="n">busbranch</span><span class="p">()</span> <span class="c1"># builds the bus-branch model        </span>
         <span class="n">grid</span><span class="o">.</span><span class="n">build_Y</span><span class="p">()</span> <span class="c1"># builds the Admittance matrix</span>
-        <span class="n">grid</span><span class="o">.</span><span class="n">init_E</span><span class="p">()</span>        
 
         <span class="c1"># &quot;Killing&quot; diagonal elements related to the substation</span>
         <span class="n">isub</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">busnodes</span><span class="p">[</span><span class="n">grid</span><span class="o">.</span><span class="n">sub_bus</span><span class="p">][</span><span class="s1">&#39;si&#39;</span><span class="p">]</span>    
         <span class="n">np</span><span class="o">.</span><span class="n">fill_diagonal</span><span class="p">(</span><span class="n">grid</span><span class="o">.</span><span class="n">Y</span><span class="p">[</span><span class="n">isub</span> <span class="p">:</span> <span class="n">isub</span> <span class="o">+</span> <span class="n">grid</span><span class="o">.</span><span class="n">sub_nph</span><span class="p">,</span> <span class="n">isub</span> <span class="p">:</span> <span class="n">isub</span> <span class="o">+</span> <span class="n">grid</span><span class="o">.</span><span class="n">sub_nph</span><span class="p">]</span> <span class="p">,</span> <span class="mf">1e50</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Ys</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">csc_matrix</span><span class="p">(</span><span class="n">grid</span><span class="o">.</span><span class="n">Y</span><span class="p">)</span> <span class="c1"># forming sparse matrix from Y</span>
+        <span class="n">grid</span><span class="o">.</span><span class="n">init_E</span><span class="p">()</span>        
 
         <span class="c1"># dispatcher        </span>
         <span class="n">lf_res</span> <span class="o">=</span> <span class="p">{</span>
@@ -192,7 +194,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">flowsAndInjections</span><span class="p">()</span>        
 
         <span class="k">if</span> <span class="n">report</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="n">gridutils</span><span class="o">.</span><span class="n">summary_lf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">lf_res</span> <span class="o">+</span> <span class="p">(</span><span class="n">method</span><span class="p">,),</span> <span class="n">times</span><span class="p">,</span> <span class="n">show_opendss_voltages</span><span class="p">)</span>
+            <span class="n">gridutils</span><span class="o">.</span><span class="n">summary_lf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lf_res</span> <span class="o">+</span> <span class="p">(</span><span class="n">method</span><span class="p">,),</span> <span class="n">times</span><span class="p">,</span> 
+                                 <span class="n">show_opendss_voltages</span><span class="p">,</span> <span class="n">show_powerflows</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">lf_res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>        
         <span class="bp">self</span><span class="o">.</span><span class="n">E</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">E</span>
