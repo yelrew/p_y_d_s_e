@@ -5,3 +5,4 @@ pydse
    :maxdepth: 4
 
    pydse
+   setup
