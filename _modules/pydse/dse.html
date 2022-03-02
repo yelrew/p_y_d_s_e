@@ -1,31 +1,68 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pydse.dse &mdash; PyDSE 1.1 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+  <meta charset="utf-8">
   
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
-        <script src="../../_static/doctools.js"></script>
-    <script src="../../_static/js/theme.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pydse.dse &mdash; PyDSE 1.1.2 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
 </head>
 
-<body class="wy-body-for-nav"> 
+<body class="wy-body-for-nav">
+
+   
   <div class="wy-grid-for-nav">
+
+    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search">
+          
+
+          
             <a href="../../index.html" class="icon icon-home"> PyDSE
+          
+
+          
           </a>
+
+          
+            
+            
+              <div class="version">
+                1.1.2
+              </div>
+            
+          
+
+          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -33,44 +70,91 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../modules.html">pydse</a></li>
 </ul>
 
+            
+          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">PyDSE</a>
+        
       </nav>
 
+
       <div class="wy-nav-content">
+        
         <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
           <li><a href="../index.html">Module code</a> &raquo;</li>
+        
           <li><a href="../pydse.html">pydse</a> &raquo;</li>
+        
       <li>pydse.dse</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
+        
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-             
+            
   <h1>Source code for pydse.dse</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;A class to Estimate the State of unbalanced Distribution Systems&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">pydse.powergrid</span> <span class="kn">import</span> <span class="n">Powergrid</span>
-<span class="kn">from</span> <span class="nn">pydse.loadflow</span> <span class="kn">import</span> <span class="n">Loadflow</span>
-<span class="kn">from</span> <span class="nn">pydse</span> <span class="kn">import</span> <span class="n">gridutils</span>
-<span class="kn">from</span> <span class="nn">pydse.meter</span> <span class="kn">import</span> <span class="n">Meter</span>
+<span class="kn">from</span> <span class="nn">pydse.powergrid</span> <span class="k">import</span> <span class="n">Powergrid</span>
+<span class="kn">from</span> <span class="nn">pydse.loadflow</span> <span class="k">import</span> <span class="n">Loadflow</span>
+<span class="kn">from</span> <span class="nn">pydse</span> <span class="k">import</span> <span class="n">gridutils</span>
+<span class="kn">from</span> <span class="nn">pydse.meter</span> <span class="k">import</span> <span class="n">Meter</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">sparse</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">sparse</span>
 
 
 <div class="viewcode-block" id="Dse"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse">[docs]</a><span class="k">class</span> <span class="nc">Dse</span><span class="p">:</span>
@@ -98,7 +182,7 @@
 <span class="sd">        Stores the measurements available in a `Meter` object</span>
 <span class="sd">    indexbr: `dict` [`str`, `dict`]</span>
 <span class="sd">        Associative array with index information for each branch km.</span>
-<span class="sd">        The key represents busk, and the values hold busm and the location</span>
+<span class="sd">        The key represents bus `k`, and the values hold bus `m` and the location</span>
 <span class="sd">        of the branch in the state vector `Ikm`.  See :py:func:`~pydse.dse.Dse.indexBranches` </span>
 <span class="sd">        for more details.</span>
 <span class="sd">    method: `str`, default &#39;branch-current&#39;</span>
@@ -129,7 +213,7 @@
 <span class="sd">        Residual (complex) vector</span>
 <span class="sd">    r_ : `numpy.array`, (M, )</span>
 <span class="sd">        Normalized residual (complex) vector        </span>
-<span class="sd">    r_thres : `float`, default 3.</span>
+<span class="sd">    r_thres : `float`, default 4.</span>
 <span class="sd">        Normalized residual test threshold    </span>
 <span class="sd">    grossmeas : `list` [`int`]</span>
 <span class="sd">        Index of the measurements flagged with gross errors.</span>
@@ -161,7 +245,7 @@
 <span class="sd">        Maximum number of iterations.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sbase</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span> <span class="n">maxit</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sbase</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span> <span class="n">maxit</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
 
         <span class="k">if</span> <span class="n">filename</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>
@@ -186,7 +270,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">Z</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Measurement vector</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">r</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Residual vector</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">r_</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Normalized residual vector</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">r_thres</span> <span class="o">=</span> <span class="mf">3.5</span> <span class="c1"># Normalized residual test threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">r_thres</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Threshold for the Normalized residual test </span>
         <span class="bp">self</span><span class="o">.</span><span class="n">H</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Jacobian Matrix</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Hs</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Sparse Jacobian Matrix</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">G</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Sparse Gain Matrix</span>
@@ -201,8 +285,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">maxit</span> <span class="o">=</span> <span class="n">maxit</span> <span class="c1"># Maximum number of iterations</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">isObservable</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hasGrossErrors</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">grossmeas</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># list of measurements with gross errors</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">grossmeas_r_</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># normalized residuals of the erroneous measurements</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grossmeas_str</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># measurements with gross errors (string list)</span>
 
 <div class="viewcode-block" id="Dse.clearMeas"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse.clearMeas">[docs]</a>    <span class="k">def</span> <span class="nf">clearMeas</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Clear the measurement set</span>
@@ -214,7 +298,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_nmi</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_nm</span> <span class="o">=</span> <span class="mi">0</span></div>
     
-<div class="viewcode-block" id="Dse.addMeas_Realtime"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse.addMeas_Realtime">[docs]</a>    <span class="k">def</span> <span class="nf">addMeas_Realtime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">location</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">accuracy</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="Dse.addMeas_Realtime"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse.addMeas_Realtime">[docs]</a>    <span class="k">def</span> <span class="nf">addMeas_Realtime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">location</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">accuracy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Add a real-time measurement</span>
 
 <span class="sd">        Currently, the following measurements are allowed: &#39;skm&#39; (complex power flow) </span>
@@ -234,7 +318,7 @@
 <span class="sd">            Measurement value (actual value in kW or MW). Three-phase values should</span>
 <span class="sd">            be entered in a list.</span>
 <span class="sd">        accuracy : float, optional</span>
-<span class="sd">            Measurement accuracy, by default 0.10</span>
+<span class="sd">            Measurement accuracy (or meter reliability), by default None.</span>
 
 <span class="sd">        Note</span>
 <span class="sd">        ----</span>
@@ -247,14 +331,14 @@
 
 <span class="sd">        &gt;&gt;&gt; from pydse.dse import Dse</span>
 <span class="sd">        &gt;&gt;&gt; dse = Dse(filename=&quot;data/IEEE13mod.dss&quot;)</span>
-<span class="sd">        &gt;&gt;&gt; dse.addMeas_Realtime(&#39;skm&#39;, location=&#39;632-670&#39;, nodes=&#39;123&#39;, accuracy= 0.0,</span>
+<span class="sd">        &gt;&gt;&gt; dse.addMeas_Realtime(&#39;skm&#39;, location=&#39;632-670&#39;, nodes=&#39;123&#39;,</span>
 <span class="sd">        value=[1.06725092e6+0.48933956e6j, 524.04365e3+125.60266e3j, 1.10045821e6+0.36163657e6j])</span>
 
 <span class="sd">        Adds the complex power drawn by the load at bus 611 and node 3.</span>
 <span class="sd">        </span>
 <span class="sd">        &gt;&gt;&gt; from pydse.dse import Dse</span>
 <span class="sd">        &gt;&gt;&gt; dse = Dse(filename=&quot;data/IEEE13mod.dss&quot;)</span>
-<span class="sd">        &gt;&gt;&gt; dse.addMeas_Realtime(&#39;s&#39;, location=&#39;611&#39;, nodes=&#39;3&#39;, accuracy= 0.0, value=163.5e3-15.54e3j)</span>
+<span class="sd">        &gt;&gt;&gt; dse.addMeas_Realtime(&#39;s&#39;, location=&#39;611&#39;, nodes=&#39;3&#39;, value=163.5e3-15.54e3j)</span>
 <span class="sd">        &quot;&quot;&quot;</span>        
         <span class="c1"># Checking consistency of the measurement location</span>
         
@@ -291,17 +375,14 @@
                        <span class="n">accuracy</span><span class="o">=</span><span class="n">accuracy</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="n">active</span><span class="p">)</span> </div>
 
 
-<div class="viewcode-block" id="Dse.addMeas"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse.addMeas">[docs]</a>    <span class="k">def</span> <span class="nf">addMeas</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;ikm&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">accuracy</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">grosserror</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+<div class="viewcode-block" id="Dse.addMeas"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse.addMeas">[docs]</a>    <span class="k">def</span> <span class="nf">addMeas</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;ikm&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">meas_filepath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">accuracy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">grosserror</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Add measurements (real or artificial) for State Estimation</span>
 
-<span class="sd">        The measurements can be of of current or power `type` (flow or injection).</span>
-<span class="sd">        If the measurement value is not provided, an artificial measurement will be automatically</span>
-<span class="sd">        generated from the Load Flow, with a random noise based on the `accuracy` field. This </span>
-<span class="sd">        parameter should reflect the reliability degree of the corresponding meter.</span>
-<span class="sd">        The `grosserror` option allows simulating bad data in the load flow measurement.</span>
-<span class="sd">        Artificial measurements can be generated for a group of buses/branches and nodes.</span>
-<span class="sd">        By default, a new measurement is considered &#39;active&#39; for State Estimation purposes.</span>
+<span class="sd">        The measurements can be of power or current types (flow or injection), with </span>
+<span class="sd">        values manually inserted or automatically read from a text file, if </span>
+<span class="sd">        ``meas_filepath`` is provided. It neither the value nor the data file is provided, </span>
+<span class="sd">        an artificial value will be generated from the Load Flow.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -320,22 +401,36 @@
 <span class="sd">        value : `list` [`float`]</span>
 <span class="sd">            Measurement values (actual values in kW or MW). Three-phase values should</span>
 <span class="sd">            be entered in a list. If None, the values will be calculated from load flow.</span>
-<span class="sd">        accuracy : float, default 0.</span>
-<span class="sd">            Measurement accuracy (0 to 1)</span>
+<span class="sd">        meas_filepath : string, default None</span>
+<span class="sd">            A path to a text file in `sdf` format, containing measurement data.</span>
+<span class="sd">        accuracy : float, default None.</span>
+<span class="sd">            Accuracy class of the measurement, for State Estimation and Bad Data detection purposes,</span>
+<span class="sd">            in per-unit. Typical values are `0.01` or `0.1`, for meter classes 1% and 10%, </span>
+<span class="sd">            respectively. See the ``Notes``.</span>
 <span class="sd">        active : bool, default True</span>
 <span class="sd">            If true, the measurement is active            </span>
 
-<span class="sd">        **Options for artificial measurements generation**</span>
+<span class="sd">        **Options for the generation of artificial measurements**</span>
 
 <span class="sd">        ignore : {&#39;src&#39;, &#39;bus&#39;}, optional</span>
-<span class="sd">            Buses to be ignored when generating the measurements, by default None.</span>
+<span class="sd">            Buses to be ignored when generating the measurements, by default None.    </span>
 <span class="sd">        grosserror : `float`, optional, by default 0.</span>
-<span class="sd">            Gross error to be added to the measurement</span>
+<span class="sd">            Gross error (in terms of standard deviations) to be added to the measurement. </span>
+<span class="sd">            See the ``Notes``.</span>
 
 <span class="sd">        Note</span>
 <span class="sd">        ----</span>
 <span class="sd">        Measurements with values are added through the function </span>
 <span class="sd">        :py:func:`~pydse.dse.Dse.addMeas_Realtime` (to be deprecated).</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        1. Artificial measurements can be created for specific groups of buses/branches or nodes.</span>
+<span class="sd">        2. By default, a new measurement is always considered &#39;active&#39; for State Estimation purposes.</span>
+<span class="sd">        3. The ``accuracy`` field reflects the reliability degree of the associated meter. For State</span>
+<span class="sd">           Estimation and Bad Data detection purposes, the measurement&#39;s standard deviation is </span>
+<span class="sd">           assumed to be 1/3 of the ``accuracy``.</span>
+<span class="sd">           For artificial measurements, the ``accuracy`` is by default 1/3 of the measurement accuracy.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -369,13 +464,18 @@
 
 <span class="sd">        Add a flow measurement from LF to branch 645-646, at nodes 2 and 3, with 10% accuracy:</span>
 <span class="sd">        </span>
-<span class="sd">        &gt;&gt;&gt; dse.addMeas(&#39;skm&#39;, location=&#39;645-646&#39;, nodes=&#39;23&#39;, accuracy=&#39;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; dse.addMeas(&#39;skm&#39;, location=&#39;645-646&#39;, nodes=&#39;23&#39;, accuracy=0.1)</span>
 
 <span class="sd">        Add a power measurement from LF to bus 611, with gross error 0.9 </span>
 <span class="sd">        (90% times the expected accuracy)</span>
 
 <span class="sd">        &gt;&gt;&gt; dse.addMeas(&#39;s&#39;, location=&#39;611&#39;, accuracy=0.2, grosserror= 0.9 )</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">meas_filepath</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">meas_filepath</span> <span class="o">=</span> <span class="n">meas_filepath</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_addMeasFromSMF</span><span class="p">(</span><span class="n">meas_filepath</span><span class="p">)</span>
+            <span class="k">return</span>
+
         <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">addMeas_Realtime</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="nb">type</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="n">location</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span> 
                                   <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">accuracy</span><span class="o">=</span><span class="n">accuracy</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="n">active</span><span class="p">)</span>
@@ -388,6 +488,7 @@
         
         <span class="nb">type</span> <span class="o">=</span> <span class="nb">type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
         <span class="n">grid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span>
+        <span class="n">std_noise</span> <span class="o">=</span> <span class="mf">0.</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">accuracy</span> <span class="k">else</span> <span class="n">accuracy</span><span class="o">/</span><span class="mf">3.</span>
         
         <span class="c1">#------------------</span>
         <span class="c1"># Bus measurements</span>
@@ -446,14 +547,14 @@
                 <span class="n">si</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">busnodes</span><span class="p">[</span><span class="n">bus</span><span class="p">][</span><span class="s1">&#39;si&#39;</span><span class="p">]</span> <span class="c1"># starting index</span>
                 <span class="k">if</span> <span class="n">nodes</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
                     <span class="n">nodes_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">busnodes</span><span class="p">[</span><span class="n">bus</span><span class="p">][</span><span class="s1">&#39;nodes&#39;</span><span class="p">]</span>
-                    <span class="n">nph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">busnodes</span><span class="p">[</span><span class="n">bus</span><span class="p">][</span><span class="s1">&#39;nphases&#39;</span><span class="p">]</span>
-                    <span class="n">value</span> <span class="o">=</span> <span class="n">grid_meas</span><span class="p">[</span><span class="n">si</span><span class="p">:</span><span class="n">si</span><span class="o">+</span><span class="n">nph</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">()</span><span class="o">*</span><span class="n">accuracy</span><span class="o">/</span><span class="mi">3</span> <span class="o">+</span> <span class="n">grosserror</span><span class="p">)</span>
+                    <span class="n">nph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">busnodes</span><span class="p">[</span><span class="n">bus</span><span class="p">][</span><span class="s1">&#39;nphases&#39;</span><span class="p">]</span>                    
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">grid_meas</span><span class="p">[</span><span class="n">si</span><span class="p">:</span><span class="n">si</span><span class="o">+</span><span class="n">nph</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">()</span><span class="o">*</span><span class="n">std_noise</span> <span class="o">+</span> <span class="n">grosserror</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">nodes_</span> <span class="o">=</span> <span class="n">nodes</span>
                     <span class="n">value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">)</span>
                     <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nodes</span><span class="p">):</span>
                         <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">busnodes</span><span class="p">[</span><span class="n">bus</span><span class="p">][</span><span class="n">n</span><span class="p">]</span>
-                        <span class="n">value</span><span class="p">[</span><span class="n">e</span><span class="p">]</span> <span class="o">=</span> <span class="n">grid_meas</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">()</span><span class="o">*</span><span class="n">accuracy</span><span class="o">/</span><span class="mi">3</span> <span class="o">+</span> <span class="n">grosserror</span><span class="p">)</span>
+                        <span class="n">value</span><span class="p">[</span><span class="n">e</span><span class="p">]</span> <span class="o">=</span> <span class="n">grid_meas</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">()</span><span class="o">*</span><span class="n">std_noise</span> <span class="o">+</span> <span class="n">grosserror</span><span class="p">)</span>
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">meter</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="n">nodes_</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="p">[</span><span class="n">bus</span><span class="p">],</span> 
                                     <span class="n">accuracy</span><span class="o">=</span><span class="n">accuracy</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="n">active</span> <span class="p">)</span> 
@@ -505,7 +606,7 @@
                     <span class="k">if</span> <span class="n">nodes_</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">branch</span><span class="p">][</span><span class="s1">&#39;nodes1&#39;</span><span class="p">]:</span>
                         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;addMeas: nodes1 and nodes2 are different (measurement&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="s1">&#39;)&#39;</span><span class="p">)</span>
                         <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-                    <span class="n">value</span> <span class="o">=</span> <span class="n">grid_meas</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">()</span> <span class="o">*</span> <span class="n">accuracy</span><span class="o">/</span><span class="mi">3</span> <span class="o">+</span> <span class="n">grosserror</span><span class="p">)</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">grid_meas</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">()</span><span class="o">*</span><span class="n">std_noise</span> <span class="o">+</span> <span class="n">grosserror</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">nodes_</span> <span class="o">=</span> <span class="n">nodes</span>
                     <span class="n">value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">)</span>
@@ -514,11 +615,52 @@
                             <span class="n">nodes_</span> <span class="o">=</span> <span class="n">nodes_</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">nodes</span><span class="p">[</span><span class="n">v</span><span class="p">],</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
                             <span class="k">continue</span>
                         <span class="n">j</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">branches</span><span class="p">[</span><span class="n">branch</span><span class="p">][</span><span class="s1">&#39;nodes2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-                        <span class="n">value</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">grid_meas</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">()</span><span class="o">*</span><span class="n">accuracy</span><span class="o">/</span><span class="mi">3</span> <span class="o">+</span> <span class="n">grosserror</span><span class="p">)</span>
+                        <span class="n">value</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">grid_meas</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">()</span><span class="o">*</span><span class="n">std_noise</span> <span class="o">+</span> <span class="n">grosserror</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes_</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="k">continue</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">meter</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="n">nodes_</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="n">m</span><span class="p">],</span> 
                                     <span class="n">accuracy</span><span class="o">=</span><span class="n">accuracy</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="n">active</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_addMeasFromSMF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">meas_filepath</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read measurements from a SMF file</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        meas_filepath : str</span>
+<span class="sd">            A path to a text file in `sdf` format, containing measurement data.</span>
+<span class="sd">        </span>
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The `sdf` format is a text file with the following measurement fields</span>
+<span class="sd">        separed by lines: key, bus1, bus2, nodes kw, kvar, amp        </span>
+<span class="sd">        &quot;&quot;&quot;</span>       
+        <span class="n">KEY_DSE_MEAS_TYPE_SKM</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">KEY_DSE_MEAS_TYPE_S_PSEUDO</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span> 
+        <span class="n">KEY_DSE_MEAS_TYPE_IKM</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+
+        <span class="n">meas_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">meas_filepath</span><span class="p">,</span> <span class="s1">&#39;str&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span>
+        <span class="n">nmeas</span> <span class="o">=</span> <span class="n">meas_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">meas_data</span><span class="p">:</span>
+            <span class="n">key</span><span class="p">,</span> <span class="n">bus1</span><span class="p">,</span> <span class="n">bus2</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">kw</span><span class="p">,</span> <span class="n">kvar</span><span class="p">,</span> <span class="n">amp</span> <span class="o">=</span> <span class="n">row</span>            
+            <span class="nb">type</span> <span class="o">=</span> <span class="p">{</span><span class="n">KEY_DSE_MEAS_TYPE_SKM</span><span class="p">:</span> <span class="s1">&#39;skm&#39;</span><span class="p">,</span> 
+                    <span class="n">KEY_DSE_MEAS_TYPE_S_PSEUDO</span><span class="p">:</span> <span class="s1">&#39;s&#39;</span><span class="p">,</span> 
+                    <span class="n">KEY_DSE_MEAS_TYPE_IKM</span><span class="p">:</span> <span class="s1">&#39;ikm&#39;</span>
+                <span class="p">}</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">location</span> <span class="o">=</span> <span class="n">bus1</span> <span class="o">+</span> <span class="n">bus2</span> <span class="k">if</span> <span class="nb">type</span> <span class="o">!=</span> <span class="s1">&#39;s&#39;</span> <span class="k">else</span> <span class="n">bus1</span>
+            
+            <span class="c1"># Implementing algebric operators in the value field</span>
+            <span class="k">if</span> <span class="s1">&#39;*&#39;</span> <span class="ow">in</span> <span class="n">kw</span><span class="p">:</span>
+                <span class="n">mult</span> <span class="o">=</span> <span class="n">kw</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+                <span class="n">kw</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">mult</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">*</span><span class="nb">float</span><span class="p">(</span><span class="n">mult</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">if</span> <span class="s1">&#39;*&#39;</span> <span class="ow">in</span> <span class="n">kvar</span><span class="p">:</span>
+                <span class="n">mult</span> <span class="o">=</span> <span class="n">kvar</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+                <span class="n">kvar</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">mult</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">*</span><span class="nb">float</span><span class="p">(</span><span class="n">mult</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>                
+
+            <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">amp</span><span class="p">)</span> <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;ikm&#39;</span> <span class="k">else</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">kw</span><span class="p">)</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">kvar</span><span class="p">)</span><span class="o">*</span><span class="mi">1</span><span class="n">j</span><span class="p">)</span><span class="o">*</span><span class="mi">1000</span>
+            <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;ikm&#39;</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">:</span> <span class="c1"># not supported yet</span>
+                <span class="k">continue</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">addMeas_Realtime</span><span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="n">location</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="Dse.disableMeas"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse.disableMeas">[docs]</a>    <span class="k">def</span> <span class="nf">disableMeas</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zpos</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disable a measurement</span>
@@ -537,9 +679,9 @@
 <div class="viewcode-block" id="Dse.indexBranches"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse.indexBranches">[docs]</a>    <span class="k">def</span> <span class="nf">indexBranches</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Construct the index containing the branch order for BcDSE</span>
 
-<span class="sd">        The dict indexbr will store the ids of the from and to buses, and. For each</span>
-<span class="sd">        node, it will store the index of the corresponding position in the measurement </span>
-<span class="sd">        vector Z and H matrix.</span>
+<span class="sd">        The index is stored in the 3-level dictitionary ``indexbr``, with the first two </span>
+<span class="sd">        keys holding the terminal buses of the branch, and the last key storing the </span>
+<span class="sd">        absolute location of each individual node in the  the state vector `Ikm`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">b</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># branch counter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">states</span> <span class="o">=</span> <span class="p">[]</span>
@@ -608,8 +750,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">Z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">)</span>        
         <span class="bp">self</span><span class="o">.</span><span class="n">zmap</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span>
         <span class="n">E</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">E</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grossmeas</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">Zstr</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span> <span class="c1"># string list</span>
+        <span class="c1">#if len(self.grossmeas) == 0:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Zstr</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span> <span class="c1"># string list</span>
 
         <span class="n">cm</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># individual meas. counter</span>
         <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">meas</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meter</span><span class="o">.</span><span class="n">meter</span><span class="p">):</span>
@@ -639,8 +781,8 @@
                 <span class="c1"># Adding measurement to Z</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">Z</span><span class="p">[</span><span class="n">cm</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">zmap</span><span class="p">[</span><span class="n">cm</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grossmeas</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">Zstr</span><span class="p">[</span><span class="n">cm</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">loc</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;@&#39;</span> <span class="o">+</span> <span class="n">n</span>                
+<span class="c1">#                if len(self.grossmeas) == 0:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Zstr</span><span class="p">[</span><span class="n">cm</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">loc</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;@&#39;</span> <span class="o">+</span> <span class="n">n</span>                
                 <span class="n">cm</span> <span class="o">+=</span> <span class="mi">1</span>        </div>
 
 
@@ -661,7 +803,7 @@
                 <span class="k">for</span> <span class="n">n_</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nodes</span><span class="p">):</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="n">active</span><span class="p">[</span><span class="n">n_</span><span class="p">]:</span>
                         <span class="k">continue</span>
-                    <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexbr</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">m</span><span class="p">][</span><span class="n">node</span><span class="p">]</span> <span class="c1"># index in vector Z</span>
+                    <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexbr</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">m</span><span class="p">][</span><span class="n">node</span><span class="p">]</span> <span class="c1"># index in the state vector</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">H</span><span class="p">[</span><span class="n">cm</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
                     <span class="n">hrow</span> <span class="o">+=</span> <span class="p">[</span><span class="n">cm</span><span class="p">];</span> <span class="n">hcol</span> <span class="o">+=</span> <span class="p">[</span><span class="n">n</span><span class="p">];</span> <span class="n">hdata</span> <span class="o">+=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> 
                     <span class="n">cm</span> <span class="o">+=</span><span class="mi">1</span>
@@ -716,8 +858,8 @@
 
         <span class="n">cm</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">meas</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">meter</span><span class="o">.</span><span class="n">meter</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">meas</span><span class="o">.</span><span class="n">accuracy</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-20</span><span class="p">:</span>
-                <span class="n">std</span> <span class="o">=</span> <span class="mf">0.00001</span> <span class="o">/</span> <span class="mi">3</span>
+            <span class="k">if</span> <span class="n">meas</span><span class="o">.</span><span class="n">accuracy</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">std</span> <span class="o">=</span> <span class="mf">1.</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">std</span> <span class="o">=</span> <span class="n">meas</span><span class="o">.</span><span class="n">accuracy</span> <span class="o">/</span> <span class="mi">3</span>
 
@@ -769,8 +911,8 @@
 <span class="sd">        Jacobian Matrix (H.T). If any row of the factorized matrix has all</span>
 <span class="sd">        elements zero, it indicates the corresponding state is non-observable.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">scipy.linalg</span> <span class="kn">import</span> <span class="n">lu_factor</span>
-        <span class="kn">from</span> <span class="nn">scipy.linalg</span> <span class="kn">import</span> <span class="n">lu</span>
+        <span class="kn">from</span> <span class="nn">scipy.linalg</span> <span class="k">import</span> <span class="n">lu_factor</span>
+        <span class="kn">from</span> <span class="nn">scipy.linalg</span> <span class="k">import</span> <span class="n">lu</span>
 
         <span class="n">ht</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">H</span><span class="o">.</span><span class="n">T</span> <span class="c1"># TODO: Change to Sparse matrix</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">M</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">:</span>
@@ -818,21 +960,24 @@
 
         <span class="n">Omega_ii</span> <span class="o">=</span> <span class="n">S_ii</span> <span class="o">/</span> <span class="n">R_ii</span> <span class="c1"># computing only diagonal elements        </span>
         <span class="bp">self</span><span class="o">.</span><span class="n">r_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">r</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">Omega_ii</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">r_</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r_</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r_</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">0.</span>
 
         <span class="n">maxr_</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r_</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
         <span class="n">maxr_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r_</span><span class="p">))</span>        
 
         <span class="k">if</span> <span class="n">maxr_</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_thres</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">hasGrossErrors</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">grossmeas</span> <span class="o">+=</span> <span class="p">[</span><span class="n">maxr_pos</span><span class="p">]</span>
+            <span class="c1">#self.grossmeas += [maxr_pos]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">grossmeas_str</span> <span class="o">+=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">Zstr</span><span class="p">[</span><span class="n">maxr_pos</span><span class="p">]]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">grossmeas_r_</span> <span class="o">+=</span> <span class="p">[</span><span class="n">maxr_</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">disableMeas</span><span class="p">(</span><span class="n">maxr_pos</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">hasGrossErrors</span> <span class="o">=</span> <span class="kc">False</span></div>
         
 
-<div class="viewcode-block" id="Dse.runDSE"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse.runDSE">[docs]</a>    <span class="k">def</span> <span class="nf">runDSE</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;branch-current&#39;</span><span class="p">,</span> <span class="n">checkerrors</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_loadflow</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-               <span class="n">report</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">reportmeas</span><span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">reportv</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">reporti</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="Dse.runDSE"><a class="viewcode-back" href="../../pydse.html#pydse.dse.Dse.runDSE">[docs]</a>    <span class="k">def</span> <span class="nf">runDSE</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;branch-current&#39;</span><span class="p">,</span> <span class="n">checkerrors</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">r_thres</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span> 
+               <span class="n">show_loadflow</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">report</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">reportmeas</span><span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">reportv</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+               <span class="n">reporti</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Wrapper class for performing a Distributed State Estimator</span>
 
 <span class="sd">        Parameters</span>
@@ -841,6 +986,8 @@
 <span class="sd">            Solution method, by default &#39;branch-current&#39;</span>
 <span class="sd">        checkerrors : `bool`, default True</span>
 <span class="sd">            If `True`, perform gross error analysis.</span>
+<span class="sd">        r_thres : `float`, default 4.</span>
+<span class="sd">            Detection threshold for the Maximum Normalized Residual test</span>
 <span class="sd">        show_loadflow : `bool`, default True</span>
 <span class="sd">            If `True`, show the &#39;true&#39; branch currents calculated from load flow.            </span>
 <span class="sd">        report : bool, optional, default False</span>
@@ -864,8 +1011,9 @@
 <span class="sd">        When running the DSE, the load flow &#39;true&#39; solution will be automatically</span>
 <span class="sd">        generated and added to the report, via the ``show_loadflow`` parameter.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        
+                
         <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">r_thres</span> <span class="o">=</span> <span class="n">r_thres</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">indexBranches</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">show_loadflow</span><span class="p">:</span>
@@ -881,11 +1029,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">hasGrossErrors</span> <span class="o">=</span> <span class="kc">True</span> <span class="c1"># force re-check</span>
 
         <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">hasGrossErrors</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
             <span class="n">status</span><span class="p">,</span> <span class="n">it</span><span class="p">,</span> <span class="n">maxabserr</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s1">&#39;branch-current&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">BranchCurrent</span><span class="p">,</span>            
             <span class="p">}[</span><span class="n">method</span><span class="p">]()</span>
             <span class="k">if</span> <span class="n">checkerrors</span> <span class="ow">and</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">checkGrossErrors</span><span class="p">()</span>
+                <span class="k">pass</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">hasGrossErrors</span> <span class="o">=</span> <span class="kc">False</span>
 
@@ -952,26 +1103,57 @@
 </pre></div>
 
            </div>
+           
           </div>
           <footer>
+  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2022, Eduardo Werley.</p>
-  </div>
+    <p>
+        &copy; Copyright 2022, Eduardo Werley.
 
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
+
         </div>
       </div>
+
     </section>
+
   </div>
-  <script>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.1.2',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
