@@ -13,17 +13,14 @@ PyDSE - A Python solution for State Estimation in Distribution Systems
 :Version: |release|
 
 
-.. .. toctree::
-
-.. readme
-
 .. include:: ../../README.rst
 
 
-Full API
-++++++++
 
-.. toctree::
+.. API
+   +++
+
+.. .. toctree::
     :maxdepth: 2
 
     modules
